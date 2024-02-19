@@ -1,0 +1,15 @@
+{
+    "[json]": {
+        "editor.quickSuggestions": {
+            "strings": true
+        },
+        "editor.suggest.insertMode": "replace",
+        "editor.tabSize": 4,
+        "editor.insertSpaces": false,
+    },
+    "[javascript]": {
+        "editor.maxTokenizationLineLength": 2500,
+        "editor.tabSize": 4,
+        "editor.insertSpaces": false,
+    },
+}
