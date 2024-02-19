@@ -27,7 +27,7 @@
 </script>
 
 <Navbar />
-<div class="flex flex-row h-full w-full">
+<div class="h-full w-full">
   <LeftSideBar />
   <DocumentList />
 </div>
