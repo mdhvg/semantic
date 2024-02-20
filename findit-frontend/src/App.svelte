@@ -27,10 +27,8 @@
 </script>
 
 <Navbar />
-<div class="h-full w-full">
-  <LeftSideBar />
-  <DocumentList />
-</div>
+<DocumentList />
+
 <!-- <form on:submit|preventDefault={search} class="flex-1">
   <input
     type="search"

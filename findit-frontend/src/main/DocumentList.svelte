@@ -60,10 +60,10 @@
     ];
 </script>
 
-<div
-    class="document-list ml-auto w-2/3 md:w-5/6 grid grid-cols-4 gap-3 p-3 overflow-visible"
+<section
+    class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 gap-3 p-3 overflow-visible"
 >
     {#each docs as document}
         <Document {document} />
     {/each}
-</div>
+</section>
