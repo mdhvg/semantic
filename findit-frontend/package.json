@@ -10,15 +10,26 @@
     "check": "svelte-check --tsconfig .frontend/tsconfig.json"
   },
   "devDependencies": {
-    "@sveltejs/vite-plugin-svelte": "^3.0.2",
+    "@sveltejs/vite-plugin-svelte": "^3.0.1",
     "@tsconfig/svelte": "^5.0.2",
-    "autoprefixer": "^10.4.17",
-    "postcss": "^8.4.35",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.32",
+    "postcss-load-config": "^5.0.2",
     "svelte": "^4.2.10",
     "svelte-check": "^3.6.3",
-    "tailwindcss": "^3.4.1",
+    "tailwindcss": "^3.3.6",
     "tslib": "^2.6.2",
     "typescript": "^5.2.2",
     "vite": "^5.1.0"
+  },
+  "dependencies": {
+    "@tiptap/core": "^2.2.3",
+    "@tiptap/pm": "^2.2.3",
+    "@tiptap/starter-kit": "^2.2.3",
+    "bits-ui": "^0.18.1",
+    "clsx": "^2.1.0",
+    "lucide-svelte": "^0.335.0",
+    "tailwind-merge": "^2.2.1",
+    "tailwind-variants": "^0.2.0"
   }
 }

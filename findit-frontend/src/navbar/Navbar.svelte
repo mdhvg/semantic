@@ -6,7 +6,7 @@
     $: model = "all-mpnet-base-v2";
 </script>
 
-<header class="w-full h-15 px-10">
+<header class="fixed top-0 left-0 w-full h-15 px-10">
     <div class="inner m-auto flex h-full w-full items-center py-3 gap-2">
         <div class="icon h-full w-10">
             <img src={Icon} alt="Icon" class="h-full w-full" />

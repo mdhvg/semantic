@@ -19,12 +19,12 @@
 </div>
 <!-- <form class="mx-auto flex w-10">
     <input
-        class="hover:outline-none focus-visible:outline-none h-full border-solid border-2 border-gray-300 rounded-md p-2"
-        type="search"
-        name="search"
-        id="search"
+    class="hover:outline-none focus-visible:outline-none h-full border-solid border-2 border-gray-300 rounded-md p-2"
+    type="search"
+    name="search"
+    id="search"
     />
     <button type="submit" class="opacity-50 hover:opacity-100 h-full w-full"
-        ><img src={SearchIcon} alt="Search" /></button
+    ><img src={SearchIcon} alt="Search" /></button
     >
 </form> -->

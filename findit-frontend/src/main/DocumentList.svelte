@@ -61,7 +61,7 @@
 </script>
 
 <section
-    class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5 gap-3 p-3 overflow-visible"
+    class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 p-3 w-full overflow-y-auto mt-16"
 >
     {#each docs as document}
         <Document {document} />
