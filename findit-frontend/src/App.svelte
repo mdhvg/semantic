@@ -6,9 +6,15 @@
   import Navbar from "./navbar/Navbar.svelte";
   import { Button } from "$lib/components/ui/button";
   import { Label } from "$lib/components/ui/label";
+  import { onMount } from "svelte";
 
   let searchText: string;
   let documentText: string;
+  $: openedDocument = "";
+  function setOpenedDocument(title: string) {
+    openedDocument = title;
+  }
+  $: console.log(openedDocument);
   async function search(): Promise<void> {
     if (!searchText) return;
     const response = await fetch(`/api/search?q=${searchText}`, {
@@ -28,95 +34,38 @@
     const data = await response.json();
     console.log(data);
   }
-  $: docs = [
-    {
-      id: 1,
-      title: "Document 1",
-      content: "Content of document 1",
-    },
-    {
-      id: 2,
-      title: "Document 2",
-      content: "Content of document 2",
-    },
-    {
-      id: 3,
-      title: "Document 3",
-      content: "Content of document 3",
-    },
-    {
-      id: 3,
-      title: "Document 3",
-      content: "Content of document 3",
-    },
-    {
-      id: 3,
-      title: "Document 3",
-      content: "Content of document 3",
-    },
-    {
-      id: 3,
-      title: "Document 3",
-      content: "Content of document 3",
-    },
-    {
-      id: 3,
-      title: "Document 3",
-      content: "Content of document 3",
-    },
-    {
-      id: 3,
-      title: "Document 3",
-      content: "Content of document 3",
-    },
-    {
-      id: 3,
-      title: "Document 3",
-      content: "Content of document 3",
-    },
-    {
-      id: 3,
-      title: "Document 3",
-      content: "Content of document 3",
-      starred: true,
-    },
-    {
-      id: 3,
-      title: "Document 3",
-      content: "Content of document 3",
-    },
-    {
-      id: 3,
-      title: "Document 3",
-      content: "Content of document 3",
-    },
-    {
-      id: 3,
-      title: "Document 3",
-      content: "Content of document 3",
-    },
-    {
-      id: 3,
-      title: "Document 3",
-      content: "Content of document 3",
-    },
-    {
-      id: 3,
-      title: "Document 3",
-      content: "Content of document 3",
-    },
-  ];
+  $: docMetadatas = [];
+  onMount(async () => {
+    const response = await fetch(
+      "http://localhost:8080/api/documents/metadatas",
+      {
+        method: "GET",
+      },
+    );
+    const data = await response.json();
+    console.log(data);
+    docMetadatas = data.metadatas.map(
+      (metadata: any, index: string | number) => ({
+        ...metadata,
+        id: data.ids[index],
+      }),
+    );
+    console.log(docMetadatas);
+  });
 </script>
 
 <Navbar />
-<!-- <div class="flex flex-row mt-16 w-full h-full overflow-hidden"> -->
-<Sidebar renderList={docs.map((doc) => doc.title)}>
+<Sidebar renderList={docMetadatas} {setOpenedDocument}>
   <svelte:fragment slot="title">
     <Label>All Documents</Label>
     <Button variant="ghost" size="icon" class="ml-auto"><Plus />New</Button>
   </svelte:fragment>
 </Sidebar>
-<DocumentList />
+{#if !openedDocument.length}
+  <DocumentList />
+{:else}
+  <TipTap documentId={openedDocument} />
+{/if}
 <Sidebar>
   <svelte:fragment slot="title">
     <Label>Tags</Label>

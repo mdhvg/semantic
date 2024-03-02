@@ -1,69 +1,50 @@
 <script lang="ts">
+    import { onMount } from "svelte";
+    import Button from "$lib/components/ui/button/button.svelte";
     import Document from "./Document.svelte";
-    $: docs = [
-        {
-            id: 1,
-            title: "Document 1",
-            content: "Content of document 1",
-        },
-        {
-            id: 2,
-            title: "Document 2",
-            content: "Content of document 2",
-        },
-        {
-            id: 3,
-            title: "Document 3",
-            content: "Content of document 3",
-        },
-        {
-            id: 3,
-            title: "Document 3",
-            content: "Content of document 3",
-        },
-        {
-            id: 3,
-            title: "Document 3",
-            content: "Content of document 3",
-        },
-        {
-            id: 3,
-            title: "Document 3",
-            content: "Content of document 3",
-        },
-        {
-            id: 3,
-            title: "Document 3",
-            content: "Content of document 3",
-        },
-        {
-            id: 3,
-            title: "Document 3",
-            content: "Content of document 3",
-        },
-        {
-            id: 3,
-            title: "Document 3",
-            content: "Content of document 3",
-        },
-        {
-            id: 3,
-            title: "Document 3",
-            content: "Content of document 3",
-            starred: true,
-        },
-        {
-            id: 3,
-            title: "Document 3",
-            content: "Content of document 3",
-        },
-    ];
+    $: docData = [];
+    onMount(async () => {
+        const response = await fetch(
+            "http://localhost:8080/api/documents/metadatas",
+            {
+                method: "GET",
+            },
+        );
+        const data = await response.json();
+        let outData: any;
+        for (let i = 0; i < data["ids"].length; i++) {
+            outData.push({
+                id: data["ids"][i],
+                ...data["metadatas"][i],
+            });
+        }
+        docData = outData;
+    });
+    function attempt() {
+        fetch("/api/documents", {
+            method: "GET",
+            headers: {
+                fields: JSON.stringify(["id", "title", "content"]),
+            },
+        });
+    }
+    async function count() {
+        const response = await fetch("/api/documents/count", {
+            method: "GET",
+        });
+        const data = await response.json();
+        console.log(data);
+    }
 </script>
 
 <section
     class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 p-3 w-full overflow-y-auto mt-16"
 >
-    {#each docs as document}
+    {#each docData as document}
         <Document {document} />
     {/each}
+    <Button on:click={attempt} class="w-full h-12 mt-3"
+        >Create new document</Button
+    >
+    <Button on:click={count} class="w-full h-12 mt-3">Count</Button>
 </section>

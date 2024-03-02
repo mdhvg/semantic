@@ -3,15 +3,11 @@
     import starFill from "../assets/star.svg";
     import menuIcon from "../assets/3-dot.svg";
     type DocumentProps = {
-        id: string;
         title: string | null;
-        content: string;
         createdAt: string | null;
         updatedAt: string | null;
         starred: boolean;
-        tags: string[];
         color: string | null;
-        contentLength: number;
     };
     export let document: DocumentProps;
 
