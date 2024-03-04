@@ -11,6 +11,7 @@
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^3.0.1",
+    "@tailwindcss/typography": "^0.5.10",
     "@tsconfig/svelte": "^5.0.2",
     "autoprefixer": "^10.4.16",
     "postcss": "^8.4.32",
@@ -24,6 +25,7 @@
   },
   "dependencies": {
     "@tiptap/core": "^2.2.3",
+    "@tiptap/extension-typography": "^2.2.4",
     "@tiptap/pm": "^2.2.3",
     "@tiptap/starter-kit": "^2.2.3",
     "bits-ui": "^0.18.1",

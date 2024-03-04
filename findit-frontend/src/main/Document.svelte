@@ -1,7 +1,5 @@
 <script lang="ts">
-    import starOutline from "../assets/star-outline.svg";
-    import starFill from "../assets/star.svg";
-    import menuIcon from "../assets/3-dot.svg";
+    import { MoreVertical } from "lucide-svelte";
     type DocumentProps = {
         title: string | null;
         createdAt: string | null;
@@ -25,16 +23,16 @@
     </div>
     <div class="flex h-7">
         <button class="rounded-full h-full w-7" on:click={toggleStar}>
-            <img
+            <!-- <img
                 src={document.starred ? starFill : starOutline}
                 alt="star"
                 class="h-5 m-auto opacity-50 hover:opacity-100"
-            />
+            /> -->
         </button>
         <button
             class="opacity-50 hover:opacity-100 rounded-full ml-auto h-7 w-7"
         >
-            <img src={menuIcon} alt="3 dot menu" class="h-5 m-auto" />
+            <MoreVertical class="h-5 m-auto" />
         </button>
     </div>
 </div>

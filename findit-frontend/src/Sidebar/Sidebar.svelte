@@ -2,11 +2,8 @@
     import Separator from "$lib/components/ui/separator/separator.svelte";
     import Label from "$lib/components/ui/label/label.svelte";
     import Button from "$lib/components/ui/button/button.svelte";
-    export let renderList: [] = [];
-    export let setOpenedDocument: (title: string) => void;
-    function changeDocument(document: any) {
-        setOpenedDocument(document.id);
-    }
+    export let selected: string = "";
+    export let renderList: any = {};
 </script>
 
 <div class="w-1/6 mt-16 px-2 flex flex-col">
@@ -16,18 +13,18 @@
     <div
         class="render-list flex flex-col py-2 h-full w-full overflow-y-auto appearance-none"
     >
-        {#each renderList as doc}
+        {#each Object.keys(renderList) as doc}
             <Button
                 variant="ghost"
                 size="default"
-                class="w-full"
+                class="w-full h-8"
                 on:click={() => {
-                    changeDocument(doc);
+                    selected = doc;
                 }}
             >
-                {doc.title}
+                {renderList[doc].title}
             </Button>
-            <Separator class="my-2" />
+            <Separator class="mb-1" />
         {/each}
     </div>
 </div>

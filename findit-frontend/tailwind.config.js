@@ -2,9 +2,10 @@ import { fontFamily } from "tailwindcss/defaultTheme";
 
 /** @type {import('tailwindcss').Config} */
 const config = {
+	plugins: [require('@tailwindcss/typography'),],
 	darkMode: ["class"],
 	content: ["./src/**/*.{html,js,svelte,ts}"],
-  safelist: ["dark"],
+	safelist: ["dark"],
 	theme: {
 		container: {
 			center: true,
@@ -56,7 +57,37 @@ const config = {
 			},
 			fontFamily: {
 				sans: [...fontFamily.sans]
-			}
+			},
+			typography: ({ theme }) => ({
+				DEFAULT: {
+					css: {
+						"*": {
+							margin: 0
+						}
+					}
+				}
+				// md: {
+				// 	css: {
+				// 		"*": {
+				// 			margin: 0
+				// 		},
+				// 	}
+				// },
+				// sm: {
+				// 	css: {
+				// 		"*": {
+				// 			margin: 0
+				// 		}
+				// 	}
+				// },
+				// lg: {
+				// 	css: {
+				// 		"*": {
+				// 			margin: 0
+				// 		}
+				// 	}
+				// },
+			}),
 		}
 	},
 };
