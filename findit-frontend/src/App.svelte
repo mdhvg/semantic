@@ -7,6 +7,8 @@
   import { Button } from "$lib/components/ui/button";
   import { Label } from "$lib/components/ui/label";
   import { onMount } from "svelte";
+  import { ModeWatcher } from "mode-watcher";
+  import * as Resizable from "$lib/components/ui/resizable";
 
   let searchText: string;
   let selectedDocument: string = "";
@@ -48,24 +50,35 @@
 </script>
 
 <!-- <svelte:window on:keydown={(e) => console.log(e)} /> -->
+<ModeWatcher />
 <Navbar />
-<Sidebar renderList={docMetadatas} bind:selected={selectedDocument}>
-  <svelte:fragment slot="title">
-    <Label>All Documents</Label>
-    <Button variant="ghost" class="ml-auto px-1"><Plus />New</Button>
-  </svelte:fragment>
-</Sidebar>
-{#if !selectedDocument.length}
-  <DocumentList />
-{:else}
-  <TipTap bind:content={tipTapContent} bind:save={saveButton} />
-{/if}
-<Sidebar>
-  <svelte:fragment slot="title">
-    <Label>Tags</Label>
-  </svelte:fragment>
-  <DocumentList />
-</Sidebar>
+<Resizable.PaneGroup direction="horizontal" class="h-full w-16">
+  <Resizable.Pane defaultSize={15}>
+    <Sidebar renderList={docMetadatas} bind:selected={selectedDocument}>
+      <svelte:fragment slot="title">
+        <Label>All Documents</Label>
+        <Button variant="ghost" class="ml-auto px-1"><Plus />New</Button>
+      </svelte:fragment>
+    </Sidebar>
+  </Resizable.Pane>
+  <Resizable.Handle />
+  <Resizable.Pane defaultSize={50}>
+    {#if !selectedDocument.length}
+      <DocumentList />
+    {:else}
+      <TipTap bind:content={tipTapContent} bind:save={saveButton} />
+    {/if}
+  </Resizable.Pane>
+  <Resizable.Handle />
+  <Resizable.Pane defaultSize={15}>
+    <Sidebar>
+      <svelte:fragment slot="title">
+        <Label>Tags</Label>
+      </svelte:fragment>
+      <DocumentList />
+    </Sidebar>
+  </Resizable.Pane>
+</Resizable.PaneGroup>
 <!-- </div>? -->
 
 <!-- <form on:submit|preventDefault={search} class="flex-1">

@@ -7,6 +7,7 @@
         Bold,
         Italic,
         Code2,
+        Eraser,
         Strikethrough,
         Pilcrow,
         Heading1,
@@ -18,11 +19,15 @@
         List,
         ListOrdered,
         CodeSquare,
+        Quote,
+        SeparatorHorizontal,
         Undo,
         Redo,
         Save,
+        SeparatorVertical,
     } from "lucide-svelte";
     import Button from "$lib/components/ui/button/button.svelte";
+    import Separator from "$lib/components/ui/separator/separator.svelte";
 
     let element: HTMLElement;
     let editor: Editor | null = null;
@@ -56,7 +61,7 @@
     });
 </script>
 
-<div class="w-4/6 mt-16 border border-gray-400 relative flex flex-col">
+<div class="border border-gray-400 relative flex flex-col h-full">
     <section
         class="flex items-center flex—wrap gap—x-4 border border-b-gray-400 p-2 w-full gap-2 overflow-x-auto scrollbar-hide"
     >
@@ -93,11 +98,9 @@
             <button
                 on:click={() => editor?.chain().focus().unsetAllMarks().run()}
             >
-                clear marks
+                <Eraser />
             </button>
-            <button on:click={() => editor?.chain().focus().clearNodes().run()}>
-                clear nodes
-            </button>
+            <Separator orientation="vertical" />
             <button
                 on:click={() => editor?.chain().focus().setParagraph().run()}
                 class={editor.isActive("paragraph") ? "is-active" : ""}
@@ -158,6 +161,7 @@
             >
                 <Heading6 />
             </button>
+            <Separator orientation="vertical" />
             <button
                 on:click={() =>
                     editor?.chain().focus().toggleBulletList().run()}
@@ -183,19 +187,15 @@
                     editor?.chain().focus().toggleBlockquote().run()}
                 class={editor.isActive("blockquote") ? "is-active" : ""}
             >
-                blockquote
+                <Quote />
             </button>
             <button
                 on:click={() =>
                     editor?.chain().focus().setHorizontalRule().run()}
             >
-                horizontal rule
+                <SeparatorHorizontal />
             </button>
-            <button
-                on:click={() => editor?.chain().focus().setHardBreak().run()}
-            >
-                hard break
-            </button>
+            <Separator orientation="vertical" />
             <button
                 on:click={() => editor?.chain().focus().undo().run()}
                 disabled={!editor.can().chain().focus().undo().run()}

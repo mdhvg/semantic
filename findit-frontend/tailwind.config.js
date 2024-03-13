@@ -56,7 +56,7 @@ const config = {
 				sm: "calc(var(--radius) - 4px)"
 			},
 			fontFamily: {
-				sans: [...fontFamily.sans]
+				sans: ['geist-sans', ...fontFamily.sans]
 			},
 			typography: ({ theme }) => ({
 				DEFAULT: {
@@ -66,27 +66,6 @@ const config = {
 						}
 					}
 				}
-				// md: {
-				// 	css: {
-				// 		"*": {
-				// 			margin: 0
-				// 		},
-				// 	}
-				// },
-				// sm: {
-				// 	css: {
-				// 		"*": {
-				// 			margin: 0
-				// 		}
-				// 	}
-				// },
-				// lg: {
-				// 	css: {
-				// 		"*": {
-				// 			margin: 0
-				// 		}
-				// 	}
-				// },
 			}),
 		}
 	},
