@@ -2,8 +2,10 @@
     import Separator from "$lib/components/ui/separator/separator.svelte";
     import Label from "$lib/components/ui/label/label.svelte";
     import Button from "$lib/components/ui/button/button.svelte";
-    export let selected: string = "";
-    export let renderList: any = {};
+    export let selected: string;
+    export let renderList: any;
+    export let returnComponent: string = "id";
+    export let titleComponent: string = "title";
 </script>
 
 <!-- <div class="w-1/6 mt-16 px-2 flex flex-col"> -->
@@ -14,16 +16,16 @@
     <div
         class="render-list flex flex-col py-2 h-full w-full overflow-y-auto appearance-none"
     >
-        {#each Object.keys(renderList) as doc}
+        {#each renderList as doc}
             <Button
                 variant="ghost"
                 size="default"
                 class="w-full h-8"
                 on:click={() => {
-                    selected = doc;
+                    selected = doc[returnComponent];
                 }}
             >
-                {renderList[doc].title}
+                {doc[titleComponent]}
             </Button>
             <Separator class="mb-1" />
         {/each}

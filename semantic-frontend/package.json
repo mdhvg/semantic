@@ -32,6 +32,7 @@
     "clsx": "^2.1.0",
     "lucide-svelte": "^0.335.0",
     "mode-watcher": "^0.2.2",
+    "nanoid": "^5.0.6",
     "paneforge": "^0.0.2",
     "svelte-radix": "^1.1.0",
     "tailwind-merge": "^2.2.1",

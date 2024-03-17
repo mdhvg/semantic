@@ -24,18 +24,52 @@
         Undo,
         Redo,
         Save,
-        SeparatorVertical,
     } from "lucide-svelte";
     import Button from "$lib/components/ui/button/button.svelte";
     import Separator from "$lib/components/ui/separator/separator.svelte";
 
+    import { baseUrl, endpoints } from "../endpoints";
+    import type { DocumentRecordMap, DocumentLoadStatus } from "../myTypes";
+
     let element: HTMLElement;
     let editor: Editor | null = null;
+    let content: string = "";
+    let lastActiveDocumentId: string = "";
 
-    export let content: string = "";
-    export let save: Button | null = null;
+    export let currentDocuments: DocumentRecordMap;
+    export let documentLoaded: DocumentLoadStatus;
+    export let activeDocumentId: string;
 
-    onMount(() => {
+    $: if (activeDocumentId && !documentLoaded[activeDocumentId]) {
+        console.log("2");
+        loadContent(activeDocumentId).then((value) => {
+            currentDocuments[activeDocumentId].content = value;
+            documentLoaded[activeDocumentId] = true;
+            editor?.commands.setContent(
+                currentDocuments[activeDocumentId].content,
+            );
+        });
+    }
+
+    $: if (activeDocumentId !== lastActiveDocumentId) {
+        console.log("1");
+        editor?.commands.setContent(currentDocuments[activeDocumentId].content);
+        lastActiveDocumentId = activeDocumentId;
+    }
+
+    async function loadContent(activeDocumentId: string): Promise<string> {
+        const response = await fetch(
+            `${baseUrl}${endpoints.getContent}/${activeDocumentId}`,
+            {
+                method: "GET",
+            },
+        );
+        const data = await response.json();
+        return data.documents[0];
+    }
+
+    onMount(async () => {
+        console.log("mount");
         editor = new Editor({
             element: element,
             extensions: [StarterKit, Typography],
@@ -43,15 +77,16 @@
             onTransaction: () => {
                 editor = editor;
             },
+            onUpdate: () => {
+                currentDocuments[activeDocumentId].content =
+                    editor?.getHTML() || content;
+            },
             editorProps: {
                 attributes: {
-                    class: "prose focus:outline-none max-w-full text-wrap",
+                    class: "prose focus:outline-none max-w-full text-wrap pointer-events-auto",
                 },
             },
         });
-        console.log(JSON.stringify(editor.getJSON()));
-        console.log(editor.getHTML());
-        console.log(editor.getText());
     });
 
     onDestroy(() => {
@@ -59,16 +94,42 @@
             editor.destroy();
         }
     });
+
+    async function sendPost() {
+        // TODO: Change the save route to save-document rather than new-document.
+        // save-document route checks if the document exists in the server:
+        //     - If the id exists update it
+        //     - Otherwise, add new document
+
+        if (editor) {
+            let title: string = editor.getText().split("\n")[0];
+            currentDocuments[activeDocumentId].title = title;
+            let response = await fetch(
+                `${baseUrl}${endpoints.newDocumennt}/${activeDocumentId}`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        title: currentDocuments[activeDocumentId].title,
+                        content: currentDocuments[activeDocumentId].content,
+                    }),
+                },
+            );
+            response = await response.json();
+            console.log(response);
+        }
+    }
 </script>
 
 <div class="border border-gray-400 relative flex flex-col h-full">
     <section
-        class="flex items-center flex—wrap gap—x-4 border border-b-gray-400 p-2 w-full gap-2 overflow-x-auto scrollbar-hide"
+        class="flex items-center flex—wrap gap—x-4 border border-b-gray-400 p-2 w-full gap-2 overflow-auto scrollbar-hide"
     >
         {#if editor !== null}
             <button
-                on:click={() =>
-                    console.log && editor?.chain().focus().toggleBold().run()}
+                on:click={() => editor?.chain().focus().toggleBold().run()}
                 disabled={!editor.can().chain().focus().toggleBold().run()}
                 class={editor.isActive("bold") ? "is-active" : ""}
             >
@@ -211,16 +272,16 @@
             <Button
                 variant="default"
                 class="ml-auto h-full"
-                bind:this={save}
                 on:click={() => {
-                    content = editor?.getHTML() || "";
-                    console.log(content);
+                    sendPost();
                 }}><Save /></Button
             >
         {/if}
     </section>
     <div
         bind:this={element}
-        class="py-1 px-2 overflow-y-auto h-full w-full max-w-full"
+        aria-hidden="true"
+        on:click={() => editor?.chain().focus().run()}
+        class="py-1 px-2 overflow-y-auto h-full w-full max-w-full appearance-none"
     ></div>
 </div>

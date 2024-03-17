@@ -61,8 +61,14 @@ const config = {
 			typography: ({ theme }) => ({
 				DEFAULT: {
 					css: {
-						"*": {
+						p: {
 							margin: 0
+						},
+						h1: {
+							margin: 0
+						},
+						pre: {
+							margin: "1em 0",
 						}
 					}
 				}

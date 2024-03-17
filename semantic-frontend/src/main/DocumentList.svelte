@@ -3,23 +3,23 @@
     import Button from "$lib/components/ui/button/button.svelte";
     import Document from "./Document.svelte";
     $: docData = [];
-    onMount(async () => {
-        const response = await fetch(
-            "http://localhost:8080/api/documents/metadatas",
-            {
-                method: "GET",
-            },
-        );
-        const data = await response.json();
-        let outData: any;
-        for (let i = 0; i < data["ids"].length; i++) {
-            outData.push({
-                id: data["ids"][i],
-                ...data["metadatas"][i],
-            });
-        }
-        docData = outData;
-    });
+    // onMount(async () => {
+    //     const response = await fetch(
+    //         "http://localhost:8080/api/documents/metadatas",
+    //         {
+    //             method: "GET",
+    //         },
+    //     );
+    //     const data = await response.json();
+    //     let outData: any;
+    //     for (let i = 0; i < data["ids"].length; i++) {
+    //         outData.push({
+    //             id: data["ids"][i],
+    //             ...data["metadatas"][i],
+    //         });
+    //     }
+    //     docData = outData;
+    // });
     function attempt() {
         fetch("/api/documents", {
             method: "GET",
@@ -29,7 +29,7 @@
         });
     }
     async function count() {
-        const response = await fetch("/api/documents/count", {
+        const response = await fetch("/api/document-count", {
             method: "GET",
         });
         const data = await response.json();

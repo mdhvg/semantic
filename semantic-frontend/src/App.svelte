@@ -10,42 +10,36 @@
   import { ModeWatcher } from "mode-watcher";
   import * as Resizable from "$lib/components/ui/resizable";
 
-  let searchText: string;
-  let selectedDocument: string = "";
-  $: tipTapContent = "";
-  $: {
-    if (selectedDocument) {
-      tipTapContent = docMetadatas[selectedDocument].content;
-    }
+  import { baseUrl, endpoints } from "./endpoints";
+  import type { DocumentRecordMap, DocumentLoadStatus } from "./myTypes";
+  import { nanoid } from "nanoid";
+
+  let currentDocuments: DocumentRecordMap = {};
+  let documentLoaded: DocumentLoadStatus = {};
+  let activeDocumentId: string;
+
+  function newDocument() {
+    const id = nanoid();
+    currentDocuments[id] = {
+      title: "",
+      content: "1",
+    };
+    documentLoaded[id] = true;
+    activeDocumentId = id;
   }
-  let saveButton: Button | null = null;
-  $: saveButton;
-  async function search(): Promise<void> {
-    if (!searchText) return;
-    const response = await fetch(`/api/search?q=${searchText}`, {
-      method: "GET",
-    });
-    const data = await response.json();
-    console.log(data);
-  }
-  let docMetadatas: any = {};
-  $: docMetadatas;
+
   onMount(async () => {
     const response = await fetch(
-      "http://localhost:8080/api/documents/metadatas",
+      baseUrl + endpoints.getByField + "/metadatas",
       {
         method: "GET",
       },
     );
     const data = await response.json();
-    console.log(data);
     for (let i = 0; i < data.ids.length; i++) {
-      docMetadatas[data.ids[i]] = data.metadatas[i];
+      currentDocuments[data.ids[i]] = data.metadatas[i];
+      documentLoaded[data.ids[i]] = false;
     }
-    for (let i of Object.keys(docMetadatas)) {
-      console.log(i);
-    }
-    console.log(docMetadatas);
   });
 </script>
 
@@ -53,30 +47,39 @@
 <ModeWatcher />
 <Navbar />
 <Resizable.PaneGroup direction="horizontal" class="h-full w-16">
-  <Resizable.Pane defaultSize={15}>
-    <Sidebar renderList={docMetadatas} bind:selected={selectedDocument}>
+  <Resizable.Pane defaultSize={15} minSize={10} maxSize={35}>
+    <Sidebar
+      renderList={Object.keys(currentDocuments).map((i) => {
+        return { id: i, title: currentDocuments[i].title };
+      })}
+      bind:selected={activeDocumentId}
+      returnComponent={"id"}
+      titleComponent={"title"}
+    >
       <svelte:fragment slot="title">
         <Label>All Documents</Label>
-        <Button variant="ghost" class="ml-auto px-1"><Plus />New</Button>
+        <Button variant="ghost" class="ml-auto px-1" on:click={newDocument}
+          ><Plus />New</Button
+        >
       </svelte:fragment>
     </Sidebar>
   </Resizable.Pane>
   <Resizable.Handle />
-  <Resizable.Pane defaultSize={50}>
-    {#if !selectedDocument.length}
+  <Resizable.Pane defaultSize={70} minSize={50}>
+    {#if !activeDocumentId}
       <DocumentList />
     {:else}
-      <TipTap bind:content={tipTapContent} bind:save={saveButton} />
+      <TipTap bind:currentDocuments bind:documentLoaded bind:activeDocumentId />
     {/if}
   </Resizable.Pane>
   <Resizable.Handle />
-  <Resizable.Pane defaultSize={15}>
-    <Sidebar>
+  <Resizable.Pane defaultSize={15} minSize={10} maxSize={35}>
+    <!-- <Sidebar>
       <svelte:fragment slot="title">
         <Label>Tags</Label>
       </svelte:fragment>
       <DocumentList />
-    </Sidebar>
+    </Sidebar> -->
   </Resizable.Pane>
 </Resizable.PaneGroup>
 <!-- </div>? -->
