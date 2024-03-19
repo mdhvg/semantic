@@ -105,7 +105,7 @@
             let title: string = editor.getText().split("\n")[0];
             currentDocuments[activeDocumentId].title = title;
             let response = await fetch(
-                `${baseUrl}${endpoints.newDocumennt}/${activeDocumentId}`,
+                `${baseUrl}${endpoints.saveDocument}/${activeDocumentId}`,
                 {
                     method: "POST",
                     headers: {
@@ -117,8 +117,8 @@
                     }),
                 },
             );
-            response = await response.json();
-            console.log(response);
+            const data = await response.json();
+            console.log(`Save result: ${JSON.stringify(data)}`);
         }
     }
 </script>
