@@ -1,22 +1,28 @@
 <script lang="ts">
   import TipTap from "./Editor/TipTap.svelte";
-  import { Plus } from "lucide-svelte";
+  import { Trash2, Plus } from "lucide-svelte";
   import Sidebar from "./Sidebar/Sidebar.svelte";
   import DocumentList from "./main/DocumentList.svelte";
   import Navbar from "./navbar/Navbar.svelte";
   import { Button } from "$lib/components/ui/button";
   import { Label } from "$lib/components/ui/label";
+  import { Separator } from "$lib/components/ui/separator";
   import { onMount } from "svelte";
   import { ModeWatcher } from "mode-watcher";
   import * as Resizable from "$lib/components/ui/resizable";
 
   import { baseUrl, endpoints } from "./endpoints";
-  import type { DocumentRecordMap, DocumentLoadStatus } from "./myTypes";
+  import type {
+    DocumentRecordMap,
+    DocumentLoadStatus,
+    RenderListType,
+  } from "./myTypes";
   import { nanoid } from "nanoid";
 
   let currentDocuments: DocumentRecordMap = {};
   let documentLoaded: DocumentLoadStatus = {};
   let activeDocumentId: string;
+  let renderList: RenderListType[] = [];
 
   function newDocument() {
     const id = nanoid();
@@ -26,6 +32,12 @@
     };
     documentLoaded[id] = true;
     activeDocumentId = id;
+  }
+
+  $: {
+    renderList = Object.keys(currentDocuments).map((i) => {
+      return { id: i, title: currentDocuments[i].title };
+    });
   }
 
   onMount(async () => {
@@ -48,20 +60,36 @@
 <Navbar />
 <Resizable.PaneGroup direction="horizontal" class="h-full w-16">
   <Resizable.Pane defaultSize={15} minSize={10} maxSize={35}>
-    <Sidebar
-      renderList={Object.keys(currentDocuments).map((i) => {
-        return { id: i, title: currentDocuments[i].title };
-      })}
-      bind:selected={activeDocumentId}
-      returnComponent={"id"}
-      titleComponent={"title"}
-    >
+    <Sidebar>
       <svelte:fragment slot="title">
         <Label>All Documents</Label>
         <Button variant="ghost" class="ml-auto px-1" on:click={newDocument}
           ><Plus />New</Button
         >
       </svelte:fragment>
+      <div
+        class="render-list flex flex-col py-2 h-full w-full overflow-y-auto appearance-none"
+        slot="iterable"
+      >
+        {#each renderList as doc}
+          <div class="flex flex-row items-center">
+            <Button
+              variant="link"
+              size="default"
+              class="w-full h-8 {activeDocumentId === doc['id']
+                ? 'text-foreground'
+                : 'text-muted-foreground'}"
+              on:click={() => {
+                activeDocumentId = doc["id"];
+              }}
+            >
+              {doc["title"]}
+            </Button>
+            <Button size="sm" variant="ghost"><Trash2 size={18} /></Button>
+          </div>
+          <Separator class="mb-1" />
+        {/each}
+      </div>
     </Sidebar>
   </Resizable.Pane>
   <Resizable.Handle />

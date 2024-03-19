@@ -12,3 +12,8 @@ export type DocumentRecord = {
 export type DocumentLoadStatus = {
     [key: string]: boolean;
 }
+
+export type RenderListType = {
+    id: string;
+    title: string;
+}

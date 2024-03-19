@@ -3,7 +3,7 @@
 </script>
 
 <div
-    class="search-wrapper flex h-full bg-gray-200 rounded-lg w-2/3 py-2 px-6 group items-center focus-within:bg-gray-400"
+    class="search-wrapper flex h-full bg-gray-200 rounded-lg w-2/3 py-2 px-6 group items-center"
 >
     <input
         type="text"

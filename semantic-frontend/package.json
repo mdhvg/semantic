@@ -28,7 +28,7 @@
     "@tiptap/extension-typography": "^2.2.4",
     "@tiptap/pm": "^2.2.3",
     "@tiptap/starter-kit": "^2.2.3",
-    "bits-ui": "^0.18.1",
+    "bits-ui": "^0.18.6",
     "clsx": "^2.1.0",
     "lucide-svelte": "^0.335.0",
     "mode-watcher": "^0.2.2",
