@@ -1,6 +1,6 @@
 <script lang="ts">
     import Search from "./Search.svelte";
-    import Icon from "../assets/Icon.svg";
+    import Icon from "../assets/Icon.svelte";
 
     import { Sun, Moon } from "lucide-svelte";
     import { Button } from "$lib/components/ui/button";
@@ -11,9 +11,7 @@
 
 <header class="fixed top-0 left-0 w-full h-16 px-10 z-50 backdrop-blur-sm">
     <div class="inner m-auto flex h-full w-full items-center py-3 gap-2">
-        <div class="icon h-full w-10">
-            <img src={Icon} alt="Icon" class="h-full w-full" />
-        </div>
+        <div class="icon h-full w-10"><Icon /></div>
         <Search />
         <div class="model-selector flex ml-auto">
             <button class="opacity-50 hover:opacity-100">

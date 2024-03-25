@@ -1,7 +1,6 @@
 <script lang="ts">
   import TipTap from "./Editor/TipTap.svelte";
-  import { Trash2, Plus } from "lucide-svelte";
-  import Sidebar from "./Sidebar/Sidebar.svelte";
+  import { Trash, Trash2, Plus } from "lucide-svelte";
   import DocumentList from "./main/DocumentList.svelte";
   import Navbar from "./navbar/Navbar.svelte";
   import { Button } from "$lib/components/ui/button";
@@ -16,81 +15,150 @@
     DocumentRecordMap,
     DocumentLoadStatus,
     RenderListType,
-  } from "./myTypes";
+    DocumentFetchType,
+  } from "./MyTypes";
   import { nanoid } from "nanoid";
 
   let currentDocuments: DocumentRecordMap = {};
   let documentLoaded: DocumentLoadStatus = {};
   let activeDocumentId: string;
-  let renderList: RenderListType[] = [];
+  let documentRenderList: RenderListType[] = [];
+  let deletedDocumentList: RenderListType[] = [];
 
   function newDocument() {
     const id = nanoid();
     currentDocuments[id] = {
       title: "",
-      content: "1",
+      content: "",
     };
     documentLoaded[id] = true;
     activeDocumentId = id;
   }
 
   $: {
-    renderList = Object.keys(currentDocuments).map((i) => {
-      return { id: i, title: currentDocuments[i].title };
-    });
+    documentRenderList = Object.keys(currentDocuments)
+      .filter((i) => !currentDocuments[i].deleted_status)
+      .map((i) => {
+        return { id: i, title: currentDocuments[i].title };
+      });
   }
 
-  onMount(async () => {
-    const response = await fetch(
-      baseUrl + endpoints.getByField + "/metadatas",
-      {
-        method: "GET",
-      },
-    );
-    const data = await response.json();
-    for (let i = 0; i < data.ids.length; i++) {
-      currentDocuments[data.ids[i]] = data.metadatas[i];
-      documentLoaded[data.ids[i]] = false;
+  $: {
+    deletedDocumentList = Object.keys(currentDocuments)
+      .filter((i) => currentDocuments[i].deleted_status)
+      .map((i) => {
+        return { id: i, title: currentDocuments[i].title };
+      });
+  }
+
+  async function moveDocumentToBin(id: string) {
+    try {
+      const response = await fetch(
+        baseUrl + endpoints.deleteDocument + "/" + id,
+        {
+          method: "DELETE",
+          headers: {
+            cors: "no-cors",
+          },
+        },
+      );
+      if (response.ok) {
+        const updatedDocuments = currentDocuments;
+        delete updatedDocuments[id];
+        currentDocuments = updatedDocuments;
+        const updatedDocumentLoaded = documentLoaded;
+        delete updatedDocumentLoaded[id];
+        documentLoaded = updatedDocumentLoaded;
+        if (activeDocumentId == id) {
+          activeDocumentId = "";
+        }
+      } else if (!response.ok && response.status === 503) {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        moveDocumentToBin(id);
+      } else {
+        throw new Error(`Server is down with status ${response.status}`);
+      }
+    } catch (error) {
+      console.log("Error:", error);
     }
-  });
+  }
+
+  async function fetchDocuments() {
+    try {
+      const response = await fetch(
+        baseUrl + endpoints.getByField + "/metadatas",
+        {
+          method: "GET",
+          headers: {
+            cors: "no-cors",
+          },
+        },
+      );
+      if (response.ok) {
+        const data: DocumentFetchType = await response.json();
+        console.log(data);
+        for (let i = 0; i < data.ids.length; i++) {
+          currentDocuments[data.ids[i]] = data.metadatas[i];
+          documentLoaded[data.ids[i]] = false;
+        }
+      } else if (!response.ok && response.status === 503) {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        fetchDocuments();
+      } else {
+        throw new Error(`Server is down with status ${response.status}`);
+      }
+    } catch (error) {
+      console.log("Error:", error);
+    }
+  }
+
+  onMount(fetchDocuments);
 </script>
 
 <!-- <svelte:window on:keydown={(e) => console.log(e)} /> -->
 <ModeWatcher />
 <Navbar />
 <Resizable.PaneGroup direction="horizontal" class="h-full w-16">
-  <Resizable.Pane defaultSize={15} minSize={10} maxSize={35}>
-    <Sidebar>
-      <svelte:fragment slot="title">
-        <Label>All Documents</Label>
-        <Button variant="ghost" class="ml-auto px-1" on:click={newDocument}
-          ><Plus />New</Button
-        >
-      </svelte:fragment>
-      <div
-        class="render-list flex flex-col py-2 h-full w-full overflow-y-auto appearance-none"
-        slot="iterable"
+  <Resizable.Pane
+    defaultSize={15}
+    minSize={10}
+    maxSize={35}
+    class="flex flex-col"
+  >
+    <div class="px-2 flex flex-row items-center">
+      <Label>All Documents</Label>
+      <Button variant="ghost" class="ml-auto px-1" on:click={newDocument}
+        ><Plus />New</Button
       >
-        {#each renderList as doc}
-          <div class="flex flex-row items-center">
-            <Button
-              variant="link"
-              size="default"
-              class="w-full h-8 {activeDocumentId === doc['id']
-                ? 'text-foreground'
-                : 'text-muted-foreground'}"
-              on:click={() => {
-                activeDocumentId = doc["id"];
-              }}
-            >
-              {doc["title"]}
-            </Button>
-            <Button size="sm" variant="ghost"><Trash2 size={18} /></Button>
-          </div>
-          <Separator class="mb-1" />
-        {/each}
-      </div>
-    </Sidebar>
+    </div>
+    <div
+      class="render-list flex flex-col py-2 h-full w-full overflow-y-auto scrollbar-hide"
+    >
+      {#each documentRenderList as doc}
+        <div class="flex flex-row items-center">
+          <Button
+            variant="link"
+            size="default"
+            class="w-full h-8 {activeDocumentId === doc['id']
+              ? 'text-foreground'
+              : 'text-muted-foreground'}"
+            on:click={() => {
+              activeDocumentId = doc["id"];
+            }}
+          >
+            {doc["title"]}
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            on:click={() => {
+              moveDocumentToBin(doc["id"]);
+            }}><Trash2 size={18} /></Button
+          >
+        </div>
+        <Separator />
+      {/each}
+    </div>
   </Resizable.Pane>
   <Resizable.Handle />
   <Resizable.Pane defaultSize={70} minSize={50}>
@@ -101,14 +169,48 @@
     {/if}
   </Resizable.Pane>
   <Resizable.Handle />
-  <Resizable.Pane defaultSize={15} minSize={10} maxSize={35}>
-    <!-- <Sidebar>
+  <Resizable.Pane
+    defaultSize={15}
+    minSize={10}
+    maxSize={35}
+    class="flex flex-col"
+  >
+    <Label class="w-full p-2">Bin</Label>
+    <div
+      class="render-list flex flex-col py-2 h-full w-full overflow-y-auto scrollbar-hide"
+    >
+      {#each deletedDocumentList as doc}
+        <div class="flex flex-row items-center">
+          <Button
+            variant="link"
+            size="default"
+            class="w-full h-8 {activeDocumentId === doc['id']
+              ? 'text-foreground'
+              : 'text-muted-foreground'}"
+            on:click={() => {
+              activeDocumentId = doc["id"];
+            }}
+          >
+            {doc["title"]}
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            on:click={() => {
+              moveDocumentToBin(doc["id"]);
+            }}><Trash2 size={18} /></Button
+          >
+        </div>
+        <Separator />
+      {/each}
+      <!-- <Sidebar>
       <svelte:fragment slot="title">
         <Label>Tags</Label>
       </svelte:fragment>
       <DocumentList />
     </Sidebar> -->
-  </Resizable.Pane>
+    </div></Resizable.Pane
+  >
 </Resizable.PaneGroup>
 <!-- </div>? -->
 

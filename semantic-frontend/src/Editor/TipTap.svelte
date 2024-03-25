@@ -29,7 +29,11 @@
     import Separator from "$lib/components/ui/separator/separator.svelte";
 
     import { baseUrl, endpoints } from "../endpoints";
-    import type { DocumentRecordMap, DocumentLoadStatus } from "../myTypes";
+    import type {
+        DocumentRecordMap,
+        DocumentLoadStatus,
+        DocumentFetchType,
+    } from "../MyTypes";
 
     let element: HTMLElement;
     let editor: Editor | null = null;
@@ -46,14 +50,20 @@
             currentDocuments[activeDocumentId].content = value;
             documentLoaded[activeDocumentId] = true;
             editor?.commands.setContent(
-                currentDocuments[activeDocumentId].content,
+                currentDocuments[activeDocumentId].content || "",
             );
+            currentDocuments[activeDocumentId].deleted_status &&
+                editor?.setEditable(false);
         });
     }
 
     $: if (activeDocumentId !== lastActiveDocumentId) {
         console.log("1");
-        editor?.commands.setContent(currentDocuments[activeDocumentId].content);
+        if (currentDocuments[activeDocumentId]) {
+            editor?.commands.setContent(
+                currentDocuments[activeDocumentId].content || "",
+            );
+        }
         lastActiveDocumentId = activeDocumentId;
     }
 
@@ -96,11 +106,6 @@
     });
 
     async function sendPost() {
-        // TODO: Change the save route to save-document rather than new-document.
-        // save-document route checks if the document exists in the server:
-        //     - If the id exists update it
-        //     - Otherwise, add new document
-
         if (editor) {
             let title: string = editor.getText().split("\n")[0];
             currentDocuments[activeDocumentId].title = title;
@@ -111,14 +116,12 @@
                     headers: {
                         "Content-Type": "application/json",
                     },
-                    body: JSON.stringify({
-                        title: currentDocuments[activeDocumentId].title,
-                        content: currentDocuments[activeDocumentId].content,
-                    }),
+                    body: JSON.stringify(currentDocuments[activeDocumentId]),
                 },
             );
             const data = await response.json();
-            console.log(`Save result: ${JSON.stringify(data)}`);
+            console.log("Save result:");
+            console.log(data);
         }
     }
 </script>
