@@ -69,9 +69,12 @@ const config = {
 						h1: {
 							margin: 0
 						},
+						h3: {
+							margin: 0
+						},
 						pre: {
 							margin: "1em 0",
-						}
+						},
 					}
 				}
 			}),
