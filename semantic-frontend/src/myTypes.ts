@@ -33,3 +33,9 @@ export type RenderListType = {
     id: string;
     title: string;
 }
+
+export type SearchRenderListType = RenderListType & { distance: number; }
+
+export type SearchResultsType = {
+    [key: string]: DocumentRecord & { distance: number };
+}

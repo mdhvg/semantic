@@ -30,6 +30,7 @@
     "@tiptap/starter-kit": "^2.2.3",
     "bits-ui": "^0.18.6",
     "clsx": "^2.1.0",
+    "cmdk-sv": "^0.0.16",
     "lucide-svelte": "^0.335.0",
     "mode-watcher": "^0.2.2",
     "nanoid": "^5.0.6",

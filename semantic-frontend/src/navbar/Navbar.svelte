@@ -2,24 +2,58 @@
     import Search from "./Search.svelte";
     import Icon from "../assets/Icon.svelte";
 
+    import { ChevronDown } from "lucide-svelte";
+
     import { Sun, Moon } from "lucide-svelte";
     import { Button } from "$lib/components/ui/button";
     import { toggleMode } from "mode-watcher";
 
-    $: model = "all-mpnet-base-v2";
+    $: selectedModel = "all-mpnet-base-v2";
 </script>
 
-<header class="fixed top-0 left-0 w-full h-16 px-10 z-50 backdrop-blur-sm">
-    <div class="inner m-auto flex h-full w-full items-center py-3 gap-2">
-        <div class="icon h-full w-10"><Icon /></div>
-        <Search />
-        <div class="model-selector flex ml-auto">
-            <button class="opacity-50 hover:opacity-100">
-                <!-- <img src={unfoldMore} alt="Model Selector button" /> -->
-            </button>
-            <div class="model leading-10">{model}</div>
-        </div>
-        <Button on:click={toggleMode} size="icon">
+<header class="fixed top-0 left-0 w-full h-16">
+    <div class="inner m-auto flex w-full h-full py-3 gap-2 px-10">
+        <Icon class="icon h-full w-10 ml-10" />
+        <Search class="ml-10" />
+        <!-- <Popover.Root bind:open let:ids>
+            <Popover.Trigger asChild let:builder>
+                <Button
+                    builders={[builder]}
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={open}
+                    class="ml-auto"
+                >
+                    <ChevronDown />
+                    {selectedModel}
+                </Button>
+            </Popover.Trigger>
+            <Popover.Content class="w-fit p-0">
+                <Command.Root>
+                    <Command.Input placeholder="Search for model..." />
+                    <Command.Empty>No framework found.</Command.Empty>
+                    <Command.Group class="overflow-auto">
+                        {#each models as model}
+                            <Command.Item
+                                value={framework.value}
+                                onSelect={(currentValue) => {
+                                    value = currentValue;
+                                    closeAndFocusTrigger(ids.trigger);
+                                }}
+                            >
+                                {framework.label}
+                            </Command.Item>
+                        {/each}
+                    </Command.Group>
+                </Command.Root>
+            </Popover.Content>
+        </Popover.Root> -->
+        <Button
+            on:click={toggleMode}
+            class="ml-auto"
+            variant="secondary"
+            size="icon"
+        >
             <Sun
                 class="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0"
             />

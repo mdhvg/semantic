@@ -5,4 +5,5 @@ export const endpoints = {
     getContent: "/api/document/content",
     saveDocument: "/api/document/save",
     deleteDocument: "/api/document/delete",
+    searchDocument: "/api/document/search",
 }

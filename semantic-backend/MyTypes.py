@@ -29,6 +29,11 @@ class DocumentRecord(BaseModel):
     color: Optional[str] = None
     starred: Optional[bool] = None
     title: str
+    # TODO: Make textContent and displayContent separate fields
+    # textContent will contain the text content of the document
+    # displayContent will contain the text content of the document in HTML format
+    # This will allow the user to view the document in a browser and also allow for
+    # better search indexing by the model
     content: str
     deleted_status: Optional[bool] = None
     deleted_timeLeft: Optional[int] = None

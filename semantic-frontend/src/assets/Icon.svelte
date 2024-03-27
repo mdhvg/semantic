@@ -1,7 +1,11 @@
+<script lang="ts">
+    import { cn } from "$lib/utils";
+</script>
+
 <svg
     viewBox="0 0 412 452"
     xmlns="http://www.w3.org/2000/svg"
-    class="fill-current stroke-current"
+    class={cn("fill-current stroke-current", $$props.class)}
 >
     <circle cx="44" cy="395" r="44" />
     <circle cx="144" cy="44" r="44" />

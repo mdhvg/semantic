@@ -55,12 +55,12 @@ class SemanticAPI:
         print(self.ids)
 
     def run(self):
-        @self.app.get("/api/search")
+        @self.app.get("/api/document/search/{q}")
         async def search(q: str):
             results = self.collection.query(  # type: ignore
                 query_texts=[q],
                 n_results=5,
-                include=["data", "distances", "documents"],
+                include=["data", "distances", "metadatas"],
             )
             print(results)
             return results
