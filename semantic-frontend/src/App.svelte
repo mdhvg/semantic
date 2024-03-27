@@ -25,6 +25,8 @@
   let documentRenderList: RenderListType[] = [];
   let deletedDocumentList: RenderListType[] = [];
 
+  $: console.log(currentDocuments);
+
   function newDocument() {
     const id = nanoid();
     currentDocuments[id] = {
@@ -117,12 +119,12 @@
 
 <!-- <svelte:window on:keydown={(e) => console.log(e)} /> -->
 <ModeWatcher />
-<Navbar />
-<Resizable.PaneGroup direction="horizontal" class="h-full w-16">
+<Separator />
+<Resizable.PaneGroup direction="horizontal" class="h-full w-full">
   <Resizable.Pane
     defaultSize={15}
     minSize={10}
-    maxSize={35}
+    maxSize={40}
     class="flex flex-col"
   >
     <div class="px-2 flex flex-row items-center">
@@ -160,15 +162,15 @@
       {/each}
     </div>
   </Resizable.Pane>
-  <Resizable.Handle />
-  <Resizable.Pane defaultSize={70} minSize={50}>
+  <Resizable.Handle class="z-1" />
+  <Resizable.Pane defaultSize={85}>
     {#if !activeDocumentId}
       <DocumentList />
     {:else}
       <TipTap bind:currentDocuments bind:documentLoaded bind:activeDocumentId />
     {/if}
   </Resizable.Pane>
-  <Resizable.Handle />
+  <!-- <Resizable.Handle class="z-0" />
   <Resizable.Pane
     defaultSize={15}
     minSize={10}
@@ -203,35 +205,8 @@
         </div>
         <Separator />
       {/each}
-      <!-- <Sidebar>
-      <svelte:fragment slot="title">
-        <Label>Tags</Label>
-      </svelte:fragment>
-      <DocumentList />
-    </Sidebar> -->
     </div></Resizable.Pane
-  >
+  > -->
 </Resizable.PaneGroup>
-<!-- </div>? -->
-
-<!-- <form on:submit|preventDefault={search} class="flex-1">
-  <input
-    type="search"
-    id="search"
-    name="search"
-    placeholder="Search..."
-    bind:value={searchText}
-    required
-  />
-  <button type="submit">Search</button>
-</form>
-<form on:submit|preventDefault={addDocument} class="flex-1">
-  <input
-    type="text"
-    id="add-document"
-    name="add-document"
-    placeholder="Add note..."
-    bind:value={documentText}
-  />
-  <button type="submit">Add</button>
-</form> -->
+<!-- Keeping the Navbar below main content keeps the content of search results over main content -->
+<Navbar />

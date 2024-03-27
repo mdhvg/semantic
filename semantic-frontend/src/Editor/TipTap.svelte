@@ -1,3 +1,8 @@
+<!--
+    TODO: Replace TipTap with ByteMD https://github.com/bytedance/bytemd
+    or codemirror https://codemirror.net (Preferably)
+-->
+
 <script lang="ts">
     import { onMount, onDestroy } from "svelte";
     import { Editor } from "@tiptap/core";
@@ -128,50 +133,64 @@
 
 <div class="border border-gray-400 relative flex flex-col h-full">
     <section
-        class="flex items-center flex—wrap gap—x-4 border border-b-gray-400 p-2 w-full gap-2 overflow-auto scrollbar-hide"
+        class="flex items-center flex—wrap border border-b-gray-400 p-2 w-full overflow-auto scrollbar-hide"
     >
         {#if editor !== null}
-            <button
+            <Button
+                variant="ghost"
+                size="icon"
                 on:click={() => editor?.chain().focus().toggleBold().run()}
                 disabled={!editor.can().chain().focus().toggleBold().run()}
                 class={editor.isActive("bold") ? "is-active" : ""}
             >
                 <Bold />
-            </button>
-            <button
+            </Button>
+            <Button
+                variant="ghost"
+                size="icon"
                 on:click={() => editor?.chain().focus().toggleItalic().run()}
                 disabled={!editor.can().chain().focus().toggleItalic().run()}
                 class={editor.isActive("italic") ? "is-active" : ""}
             >
                 <Italic />
-            </button>
-            <button
+            </Button>
+            <Button
+                variant="ghost"
+                size="icon"
                 on:click={() => editor?.chain().focus().toggleStrike().run()}
                 disabled={!editor.can().chain().focus().toggleStrike().run()}
                 class={editor.isActive("strike") ? "is-active" : ""}
             >
                 <Strikethrough />
-            </button>
-            <button
+            </Button>
+            <Button
+                variant="ghost"
+                size="icon"
                 on:click={() => editor?.chain().focus().toggleCode().run()}
                 disabled={!editor.can().chain().focus().toggleCode().run()}
                 class={editor.isActive("code") ? "is-active" : ""}
             >
                 <Code2 />
-            </button>
-            <button
+            </Button>
+            <Button
+                variant="ghost"
+                size="icon"
                 on:click={() => editor?.chain().focus().unsetAllMarks().run()}
             >
                 <Eraser />
-            </button>
+            </Button>
             <Separator orientation="vertical" />
-            <button
+            <Button
+                variant="ghost"
+                size="icon"
                 on:click={() => editor?.chain().focus().setParagraph().run()}
                 class={editor.isActive("paragraph") ? "is-active" : ""}
             >
                 <Pilcrow />
-            </button>
-            <button
+            </Button>
+            <Button
+                variant="ghost"
+                size="icon"
                 on:click={() =>
                     editor?.chain().focus().toggleHeading({ level: 1 }).run()}
                 class={editor.isActive("heading", { level: 1 })
@@ -179,8 +198,10 @@
                     : ""}
             >
                 <Heading1 />
-            </button>
-            <button
+            </Button>
+            <Button
+                variant="ghost"
+                size="icon"
                 on:click={() =>
                     editor?.chain().focus().toggleHeading({ level: 2 }).run()}
                 class={editor.isActive("heading", { level: 2 })
@@ -188,8 +209,10 @@
                     : ""}
             >
                 <Heading2 />
-            </button>
-            <button
+            </Button>
+            <Button
+                variant="ghost"
+                size="icon"
                 on:click={() =>
                     editor?.chain().focus().toggleHeading({ level: 3 }).run()}
                 class={editor.isActive("heading", { level: 3 })
@@ -197,8 +220,10 @@
                     : ""}
             >
                 <Heading3 />
-            </button>
-            <button
+            </Button>
+            <Button
+                variant="ghost"
+                size="icon"
                 on:click={() =>
                     editor?.chain().focus().toggleHeading({ level: 4 }).run()}
                 class={editor.isActive("heading", { level: 4 })
@@ -206,8 +231,10 @@
                     : ""}
             >
                 <Heading4 />
-            </button>
-            <button
+            </Button>
+            <Button
+                variant="ghost"
+                size="icon"
                 on:click={() =>
                     editor?.chain().focus().toggleHeading({ level: 5 }).run()}
                 class={editor.isActive("heading", { level: 5 })
@@ -215,8 +242,10 @@
                     : ""}
             >
                 <Heading5 />
-            </button>
-            <button
+            </Button>
+            <Button
+                variant="ghost"
+                size="icon"
                 on:click={() =>
                     editor?.chain().focus().toggleHeading({ level: 6 }).run()}
                 class={editor.isActive("heading", { level: 6 })
@@ -224,54 +253,68 @@
                     : ""}
             >
                 <Heading6 />
-            </button>
+            </Button>
             <Separator orientation="vertical" />
-            <button
+            <Button
+                variant="ghost"
+                size="icon"
                 on:click={() =>
                     editor?.chain().focus().toggleBulletList().run()}
                 class={editor.isActive("bulletList") ? "is-active" : ""}
             >
                 <List />
-            </button>
-            <button
+            </Button>
+            <Button
+                variant="ghost"
+                size="icon"
                 on:click={() =>
                     editor?.chain().focus().toggleOrderedList().run()}
                 class={editor.isActive("orderedList") ? "is-active" : ""}
             >
                 <ListOrdered />
-            </button>
-            <button
+            </Button>
+            <Button
+                variant="ghost"
+                size="icon"
                 on:click={() => editor?.chain().focus().toggleCodeBlock().run()}
                 class={editor.isActive("codeBlock") ? "is-active" : ""}
             >
                 <CodeSquare />
-            </button>
-            <button
+            </Button>
+            <Button
+                variant="ghost"
+                size="icon"
                 on:click={() =>
                     editor?.chain().focus().toggleBlockquote().run()}
                 class={editor.isActive("blockquote") ? "is-active" : ""}
             >
                 <Quote />
-            </button>
-            <button
+            </Button>
+            <Button
+                variant="ghost"
+                size="icon"
                 on:click={() =>
                     editor?.chain().focus().setHorizontalRule().run()}
             >
                 <SeparatorHorizontal />
-            </button>
+            </Button>
             <Separator orientation="vertical" />
-            <button
+            <Button
+                variant="ghost"
+                size="icon"
                 on:click={() => editor?.chain().focus().undo().run()}
                 disabled={!editor.can().chain().focus().undo().run()}
             >
                 <Undo />
-            </button>
-            <button
+            </Button>
+            <Button
+                variant="ghost"
+                size="icon"
                 on:click={() => editor?.chain().focus().redo().run()}
                 disabled={!editor.can().chain().focus().redo().run()}
             >
                 <Redo />
-            </button>
+            </Button>
             <Button
                 variant="default"
                 class="ml-auto h-full"

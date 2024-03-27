@@ -20,21 +20,6 @@
     //     }
     //     docData = outData;
     // });
-    function attempt() {
-        fetch("/api/documents", {
-            method: "GET",
-            headers: {
-                fields: JSON.stringify(["id", "title", "content"]),
-            },
-        });
-    }
-    async function count() {
-        const response = await fetch("/api/document-count", {
-            method: "GET",
-        });
-        const data = await response.json();
-        console.log(data);
-    }
 </script>
 
 <section
@@ -43,8 +28,4 @@
     {#each docData as document}
         <Document {document} />
     {/each}
-    <Button on:click={attempt} class="w-full h-12 mt-3"
-        >Create new document</Button
-    >
-    <Button on:click={count} class="w-full h-12 mt-3">Count</Button>
 </section>
