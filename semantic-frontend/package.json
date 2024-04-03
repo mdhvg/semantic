@@ -1,5 +1,5 @@
 {
-  "name": "findit",
+  "name": "semantic",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "check": "svelte-check --tsconfig .frontend/tsconfig.json"
+    "check": "svelte-check --tsconfig .frontend/tsconfig.json",
+    "tauri": "tauri"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^3.0.1",
@@ -21,7 +22,8 @@
     "tailwindcss": "^3.3.6",
     "tslib": "^2.6.2",
     "typescript": "^5.2.2",
-    "vite": "^5.1.0"
+    "vite": "^5.1.0",
+    "@tauri-apps/api": "^1"
   },
   "dependencies": {
     "@tiptap/core": "^2.2.3",
@@ -37,6 +39,7 @@
     "paneforge": "^0.0.2",
     "svelte-radix": "^1.1.0",
     "tailwind-merge": "^2.2.1",
-    "tailwind-variants": "^0.2.0"
+    "tailwind-variants": "^0.2.0",
+    "@tauri-apps/cli": "^1"
   }
 }

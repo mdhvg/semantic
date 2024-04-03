@@ -137,6 +137,3 @@ web_modules/
 packages/cli/dist
 dist/
 dist
-
-# shadcn-svelte
-lib

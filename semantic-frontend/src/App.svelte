@@ -143,7 +143,8 @@
             size="default"
             class="w-full h-8 {activeDocumentId === doc['id']
               ? 'text-foreground'
-              : 'text-muted-foreground'}"
+              : 'text-muted-foreground'}
+              "
             on:click={() => {
               activeDocumentId = doc["id"];
             }}
