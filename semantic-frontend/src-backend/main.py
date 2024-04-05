@@ -1,3 +1,4 @@
+import uvicorn
 from CollectionManager import CollectionLoader
 from SemanticMiddleware import SemanticMiddleware
 from MyTypes import DocumentRecord
@@ -12,6 +13,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 import asyncio
 
+import os
+
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 class SemanticAPI:
     def __init__(self):
@@ -19,7 +23,7 @@ class SemanticAPI:
             title="semantic",
             description="Semantic API",
         )
-        self.SITE_PATH = "../semantic-frontend/dist"
+        self.SITE_PATH = "../dist"
         self.collection_loader = CollectionLoader()
         self.collection_name = self.collection_loader.collection_base_name
         self.collection_status = self.collection_loader.collection_status
@@ -129,3 +133,4 @@ class SemanticAPI:
 
 
 api = SemanticAPI()
+# uvicorn.run(app=api.app, host="0.0.0.0", port=8080, log_level="info")
