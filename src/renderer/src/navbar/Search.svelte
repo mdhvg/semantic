@@ -1,13 +1,13 @@
 <script lang="ts">
   import { baseUrl, endpoints } from '../endpoints'
   import SearchIcon from '../assets/SearchIcon.svelte'
-  import type { SearchResultsType, SearchRenderListType } from 'src/MyTypes'
+  import type { SearchResultsType, SearchRenderListType } from '../MyTypes'
   import Separator from '$lib/components/ui/separator/separator.svelte'
   import Button from '$lib/components/ui/button/button.svelte'
   import { cn } from '$lib/utils'
 
   let searchQuery: string = ''
-  let searchTimeout: number
+  let searchTimeout: ReturnType<typeof setTimeout> | null = null
   let searchResult: SearchResultsType = {}
   let searchResultList: SearchRenderListType[] = []
 
@@ -28,9 +28,9 @@
     })
   }
 
-  function debounceSearch() {
+  function debounceSearch(): void {
     clearTimeout(searchTimeout)
-    searchTimeout = setTimeout(async () => {
+    searchTimeout = setTimeout(async (): Promise<void> => {
       try {
         if (searchQuery.length) {
           const response = await fetch(baseUrl + endpoints.searchDocument + '/' + searchQuery, {

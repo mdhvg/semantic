@@ -60,7 +60,7 @@ const config = {
         sans: ["'Space Grotesk'", ...fontFamily.sans],
         mono: ["'Martian Mono'", ...fontFamily.mono]
       },
-      typography: ({ theme }) => ({
+      typography: () => ({
         DEFAULT: {
           css: {
             p: {

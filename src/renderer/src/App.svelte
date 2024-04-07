@@ -1,6 +1,6 @@
 <script lang="ts">
   import TipTap from './Editor/TipTap.svelte'
-  import { Trash, Trash2, Plus } from 'lucide-svelte'
+  import { Trash2, Plus } from 'lucide-svelte'
   import DocumentList from './main/DocumentList.svelte'
   import Navbar from './navbar/Navbar.svelte'
   import { Button } from '$lib/components/ui/button'
@@ -113,50 +113,54 @@
 
 <!-- <svelte:window on:keydown={(e) => console.log(e)} /> -->
 <ModeWatcher />
-<Separator />
-<Resizable.PaneGroup direction="horizontal" class="h-full w-full">
-  <Resizable.Pane defaultSize={15} minSize={10} maxSize={40} class="flex flex-col">
-    <div class="px-2 flex flex-row items-center">
-      <Label>All Documents</Label>
-      <Button variant="ghost" class="ml-auto px-1" on:click={newDocument}><Plus />New</Button>
-    </div>
-    <div class="render-list flex flex-col py-2 h-full w-full overflow-y-auto scrollbar-hide">
-      {#each documentRenderList as doc}
-        <div class="flex flex-row items-center">
-          <Button
-            variant="link"
-            size="default"
-            class="w-full h-8 {activeDocumentId === doc['id']
-              ? 'text-foreground'
-              : 'text-muted-foreground'}
+<main class="h-full w-full flex flex-col">
+  <Separator />
+  <Resizable.PaneGroup direction="horizontal">
+    <Resizable.Pane defaultSize={15} minSize={10} maxSize={40} class="flex flex-col">
+      <div class="px-2 flex flex-row items-center">
+        <Label>All Documents</Label><Button
+          variant="ghost"
+          class="ml-auto px-1"
+          on:click={newDocument}><Plus />New</Button
+        >
+      </div>
+      <div class="render-list flex flex-col py-2 h-full w-full overflow-y-auto scrollbar-hide">
+        {#each documentRenderList as doc}
+          <div class="flex flex-row items-center">
+            <Button
+              variant="link"
+              size="default"
+              class="w-full h-8 {activeDocumentId === doc['id']
+                ? 'text-foreground'
+                : 'text-muted-foreground'}
               "
-            on:click={() => {
-              activeDocumentId = doc['id']
-            }}
-          >
-            {doc['title']}
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            on:click={() => {
-              moveDocumentToBin(doc['id'])
-            }}><Trash2 size={18} /></Button
-          >
-        </div>
-        <Separator />
-      {/each}
-    </div>
-  </Resizable.Pane>
-  <Resizable.Handle class="z-1" />
-  <Resizable.Pane defaultSize={85}>
-    {#if !activeDocumentId}
-      <DocumentList />
-    {:else}
-      <TipTap bind:currentDocuments bind:documentLoaded bind:activeDocumentId />
-    {/if}
-  </Resizable.Pane>
-  <!-- <Resizable.Handle class="z-0" />
+              on:click={() => {
+                activeDocumentId = doc['id']
+              }}
+            >
+              {doc['title']}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              on:click={() => {
+                moveDocumentToBin(doc['id'])
+              }}><Trash2 size={18} /></Button
+            >
+          </div>
+          <Separator />
+        {/each}
+      </div>
+    </Resizable.Pane>
+    <Resizable.Handle class="z-1" />
+    <Resizable.Pane defaultSize={85}>
+      {#if !activeDocumentId}
+        <DocumentList />
+      {:else}
+        <TipTap bind:currentDocuments bind:documentLoaded bind:activeDocumentId />
+      {/if}
+    </Resizable.Pane>
+    <!-- <Resizable.Handle class="z-0" />
   <Resizable.Pane
     defaultSize={15}
     minSize={10}
@@ -193,6 +197,9 @@
       {/each}
     </div></Resizable.Pane
   > -->
-</Resizable.PaneGroup>
+  </Resizable.PaneGroup>
+  <Separator />
+  <div class="status-bar px-5"><Label class="text-muted-foreground">Status</Label></div>
+</main>
 <!-- Keeping the Navbar below main content keeps the content of search results over main content -->
 <Navbar />

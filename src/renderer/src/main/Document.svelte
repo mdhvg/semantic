@@ -17,7 +17,7 @@
 <div class="flex flex-col h-fit w-full border-solid border-2 border-gray-300 rounded-md p-3">
   <div class="text">
     <h1 class="text-xl">{document.title}</h1>
-    <p>{document.content}</p>
+    <!-- <p>{document.content}</p> -->
   </div>
   <div class="flex h-7">
     <button class="rounded-full h-full w-7" on:click={toggleStar}>

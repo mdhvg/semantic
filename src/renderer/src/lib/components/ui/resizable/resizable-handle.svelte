@@ -1,5 +1,5 @@
 <script lang="ts">
-  import DragHandleDots2 from 'svelte-radix/DragHandleDots2.svelte'
+  import { DragHandleDots2 } from 'svelte-radix'
   import * as ResizablePrimitive from 'paneforge'
   import { cn } from '$lib/utils.js'
 

@@ -34,7 +34,7 @@
   import Separator from '$lib/components/ui/separator/separator.svelte'
 
   import { baseUrl, endpoints } from '../endpoints'
-  import type { DocumentRecordMap, DocumentLoadStatus, DocumentFetchType } from '../MyTypes'
+  import type { DocumentRecordMap, DocumentLoadStatus } from '../MyTypes'
 
   let element: HTMLElement
   let editor: Editor | null = null

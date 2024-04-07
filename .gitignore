@@ -135,3 +135,6 @@ dist
 out
 .DS_Store
 *.log*
+
+# python setup
+setup
