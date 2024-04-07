@@ -12,11 +12,11 @@ import type { ModeType } from './MyTypes'
  * The backend class sets up the python backend for the application as follows:
  * - In development mode:
  * root
- *  └─ resources
+ *  ├─ resources
  *  │  ├─ ${os}
  *  │  │  └─ *Files and scripts to install python on ${os}*
  *  │  └─ setup (x)
- *  │     └─ python
+ *  │     ├─ python
  *  │     │  └─ *Python files*
  *  │     └─ temp
  *  │        └─ *Temporary files*
