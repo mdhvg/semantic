@@ -1,13 +1,17 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import icon from '../../resources/icon.png?asset'
+import icon from '../../resources/common/icon.png?asset'
 import { Backend } from './Backend'
 
 console.log('process.env.ONLY_SETUP:', process.env.ONLY_SETUP)
 
 if (process.env.ONLY_SETUP) {
-  new Backend(import.meta.env.MODE === 'development' ? 'development' : 'production')
+  const backendHandler = new Backend(
+    import.meta.env.MODE === 'development' ? 'development' : 'production'
+  )
+  await backendHandler.init()
+  backendHandler.startBackend()
 } else {
   function createWindow(): void {
     // Create the browser window.
@@ -44,11 +48,14 @@ if (process.env.ONLY_SETUP) {
   // This method will be called when Electron has finished
   // initialization and is ready to create browser windows.
   // Some APIs can only be used after this event occurs.
-  app.whenReady().then(() => {
+  app.whenReady().then(async () => {
     // Set app user model id for windows
     electronApp.setAppUserModelId('com.electron')
 
-    Backend(import.meta.env.MODE === 'development' ? 'development' : 'production')
+    const backendHandler = new Backend(
+      import.meta.env.MODE === 'development' ? 'development' : 'production'
+    )
+    if (await backendHandler.init()) backendHandler.startBackend()
 
     // Default open or close DevTools by F12 in development
     // and ignore CommandOrControl + R in production.

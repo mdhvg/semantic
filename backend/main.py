@@ -1,7 +1,10 @@
+import os
+import sys
+root = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(root)
+os.chdir(root)
+
 import uvicorn
-from CollectionManager import CollectionLoader
-from SemanticMiddleware import SemanticMiddleware
-from MyTypes import DocumentRecord
 
 from chromadb import GetResult
 from chromadb.api.types import Include
@@ -13,9 +16,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 import asyncio
 
-import os
-
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
+from CollectionManager import CollectionLoader
+from SemanticMiddleware import SemanticMiddleware
+from MyTypes import DocumentRecord
 
 class SemanticAPI:
     def __init__(self):
@@ -127,9 +130,9 @@ class SemanticAPI:
             return JSONResponse(content={"error": f"{id} not found"}, status_code=404)
 
         # This function has to be defined after all the other routes
-        self.app.mount(
-            "/", StaticFiles(directory=self.SITE_PATH, html=True), name="frontend"
-        )
+        # self.app.mount(
+        #     "/", StaticFiles(directory=self.SITE_PATH, html=True), name="frontend"
+        # )
 
 
 api = SemanticAPI()

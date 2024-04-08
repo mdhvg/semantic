@@ -1,25 +1,26 @@
 import { dirname, resolve } from 'path'
-import { existsSync, mkdirSync, createWriteStream, rmSync, appendFileSync } from 'fs'
+import { existsSync, mkdirSync, rmSync, appendFileSync, writeFileSync } from 'fs'
 import { fileURLToPath } from 'url'
-import { execSync } from 'child_process'
+import { exec, execSync } from 'child_process'
 
 import AdmZip from 'adm-zip'
 import axios from 'axios'
 
-import type { ModeType } from './MyTypes'
+import type { Mode, PlatformDirectories } from './MyTypes'
+import { Directories } from './Backend.config'
 
 /*
  * The backend class sets up the python backend for the application as follows:
  * - In development mode:
  * root
  *  ├─ resources
- *  │  ├─ ${os}
- *  │  │  └─ *Files and scripts to install python on ${os}*
- *  │  └─ setup (x)
- *  │     ├─ python
- *  │     │  └─ *Python files*
- *  │     └─ temp
- *  │        └─ *Temporary files*
+ *  │  └─ ${os}
+ *  │     └─ *Files and scripts to install python on ${os}*
+ *  ├─ setup (x)
+ *  │  ├─ python
+ *  │  │  └─ *Python files*
+ *  │  └─ temp
+ *  │     └─ *Temporary files*
  *  └─ backend
  *     └─ *Backend python files*
  *
@@ -38,83 +39,139 @@ import type { ModeType } from './MyTypes'
  */
 
 class Backend {
-  private location: string
-  private resourcesPath: string
+  private mode: Mode
+  private platform: NodeJS.Platform
+  private resolvedRootDir: string = resolve(dirname(fileURLToPath(import.meta.url)), '../../')
+  private directoryGroup: PlatformDirectories
 
-  constructor(mode: ModeType) {
-    const __dirname = dirname(fileURLToPath(import.meta.url))
-    if (mode === 'development') {
-      console.log('startBackend in development mode')
-      this.location = resolve(__dirname, '../../setup/python')
-    } else {
-      console.log('startBackend in production mode')
-      this.location = resolve(__dirname, 'python')
-    }
-    console.log('location:', this.location)
-
-    if (!existsSync(this.location)) this.setupBackend()
+  constructor(mode: Mode) {
+    this.mode = mode
+    this.platform = process.platform
+    this.directoryGroup = Directories[this.mode][this.platform]
   }
 
-  private setupBackend(): void {
-    this.resourcesPath = resolve(this.location, '../resources')
+  public async init(): Promise<boolean> {
+    // Check for existence of embedded python
+    const pythonDir = resolve(this.resolvedRootDir, this.directoryGroup.python.path)
+    if (!existsSync(pythonDir)) {
+      const success = await this.setupPython()
+      if (!success) {
+        console.error('Could not set up Python environment')
+        return false
+      }
+    }
+    // Whatever this function runs doesn't return anything, just always makes sure all python dependencies are installed
+    this.setPythonEnvironment()
+    return true
+  }
 
-    const platform = process.platform
-    if (platform === 'win32') {
-      console.log('Setting up for Windows')
-      this.setupWindows()
-    } else if (platform === 'linux') {
+  // This function needs to run synchronously
+  private setPythonEnvironment(): void {
+    if (this.platform === 'win32') {
+      // install pip
+      const pythonPath = resolve(
+        this.resolvedRootDir,
+        this.directoryGroup.python.path,
+        './python.exe'
+      )
+      const getPipPath = resolve(
+        this.resolvedRootDir,
+        this.directoryGroup.python.path,
+        './get-pip.py'
+      )
+      execSync(`${pythonPath} ${getPipPath}`)
+
+      // enable pip
+      appendFileSync(
+        resolve(this.resolvedRootDir, this.directoryGroup.python.path, 'python311._pth'),
+        '\nimport site\n'
+      )
+
+      // install pip packages
+      const requirementsPath = resolve(this.resolvedRootDir, this.directoryGroup.requirements.path)
+      execSync(`${pythonPath} -m pip install -r ${requirementsPath}`)
+    }
+    if (this.platform === 'linux') {
       console.log('Setting up for Linux')
-    } else if (platform === 'darwin') {
-      console.log('Setting up for macOS')
     }
   }
 
-  private async setupWindows(): Promise<void> {
-    console.log('setupWindows')
-    const tempDir = resolve(this.location, '../temp')
-    mkdirSync(tempDir, { recursive: true })
-    mkdirSync(this.location, { recursive: true })
+  private async setupPython(): Promise<boolean> {
+    if (this.platform === 'win32') {
+      console.log('Setting up for Windows')
+      const pythonDir = resolve(this.resolvedRootDir, this.directoryGroup.python.path)
+      const tempDir = resolve(this.resolvedRootDir, this.directoryGroup.temp.path)
+      mkdirSync(pythonDir, { recursive: true })
+      mkdirSync(tempDir, { recursive: true })
 
-    const zipPath = resolve(tempDir, './python.zip')
-    const getPipPath = resolve(this.location, './get-pip.py')
-    const downloads = [
-      this.downloadFile(
-        'https://www.python.org/ftp/python/3.11.9/python-3.11.9-embed-amd64.zip',
-        zipPath
-      ),
-      this.downloadFile('https://github.com/pypa/get-pip', getPipPath)
-    ]
-    await downloads[0]
-    const zip = new AdmZip(zipPath)
+      const zipPath = resolve(tempDir, './python.zip')
+      const getPipPath = resolve(pythonDir, './get-pip.py')
 
-    zip.extractAllTo(this.location, true)
-    rmSync(zipPath)
-    rmSync(tempDir, { recursive: true })
+      const downloads = [
+        this.downloadFile(
+          'https://www.python.org/ftp/python/3.11.9/python-3.11.9-embed-amd64.zip',
+          zipPath
+        ),
+        this.downloadFile('https://bootstrap.pypa.io/get-pip.py', getPipPath)
+      ]
+      const response = await Promise.all(downloads)
+      if (response[0]) {
+        console.error(
+          `Could not download python executable\nGot http response code: ${response[0]}`
+        )
+        return false
+      }
+      if (response[1]) {
+        console.error(`Could not download pip\nGot http response code: ${response[1]}`)
+        return false
+      }
+      const zip = new AdmZip(zipPath)
 
-    // Install pip
-    const pythonPath = resolve(this.location, './python.exe')
-    execSync(`${pythonPath} ${getPipPath}`)
-    // Enable pip
-    const pythonPthFile = resolve(this.location, './python311._pth')
-    appendFileSync(pythonPthFile, '\nimport site\n')
-
-    // Install pip packages
-    const requirementsPath = resolve(this.resourcesPath, './requirements.txt')
-    execSync(`${pythonPath} -m pip install -r ${requirementsPath}`)
+      zip.extractAllTo(pythonDir, true)
+      rmSync(zipPath)
+      rmSync(tempDir, { recursive: true })
+      return true
+    }
+    if (this.platform === 'linux') {
+      return true
+    }
+    console.error('Unsupported platform (For now)')
+    return false
   }
 
-  private async downloadFile(url: string, location: string): Promise<void> {
-    const writer = createWriteStream(location)
-    const response = await axios({
-      method: 'GET',
-      url: url,
-      responseType: 'stream'
-    })
-    response.data.pipe(writer)
-    return new Promise((resolve, reject) => {
-      writer.on('finish', resolve)
-      writer.on('error', reject)
-    })
+  private async downloadFile(url: string, location: string): Promise<number> {
+    try {
+      const response = await axios({
+        method: 'GET',
+        url: url,
+        responseType: 'arraybuffer'
+      })
+      if (response.status !== 200) {
+        return response.status
+      }
+      writeFileSync(location, Buffer.from(response.data))
+      return 0
+    } catch (error) {
+      console.error(error)
+      return 1
+    }
+  }
+
+  public startBackend(): void {
+    console.log('Starting backend')
+    if (this.platform === 'win32') {
+      const pythonPath = resolve(
+        this.resolvedRootDir,
+        this.directoryGroup.python.path,
+        'python.exe'
+      )
+      console.log(
+        `cd ${resolve(this.resolvedRootDir, this.directoryGroup.backend.path)} && ${pythonPath} -m uvicorn main:api.app --port 8080`
+      )
+      exec(
+        `cd ${resolve(this.resolvedRootDir, this.directoryGroup.backend.path)} && ${pythonPath} -m uvicorn main:api.app --port 8080`
+      )
+    }
   }
 }
 

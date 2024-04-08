@@ -4,7 +4,6 @@
 
 1. Fix order of backend setup. The backend should perform checks in the following order:
 
-   - If setup directory exists
    - Embedded python files
    - Python environment setup
 
@@ -27,3 +26,5 @@
 1. Move the python version, download links, etc to a separate config file.
 
 1. Set an electron persistent variable using [Electron-store](https://github.com/sindresorhus/electron-store) to avoid recreation of backend environment.
+
+1. Implement a function that selectively installs only the missing python dependencies
