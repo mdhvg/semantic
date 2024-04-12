@@ -1,5 +1,4 @@
 <script lang="ts">
-  import TipTap from './Editor/TipTap.svelte'
   import { Trash2, Plus } from 'lucide-svelte'
   import DocumentList from './main/DocumentList.svelte'
   import Navbar from './navbar/Navbar.svelte'
@@ -10,14 +9,16 @@
   import { ModeWatcher } from 'mode-watcher'
   import * as Resizable from '$lib/components/ui/resizable'
 
-  import { baseUrl, endpoints } from './endpoints'
-  import type {
-    DocumentRecordMap,
-    DocumentLoadStatus,
-    RenderListType,
-    DocumentFetchType
+  import { baseUrl, commands, endpoints } from './endpoints'
+  import {
+    type DocumentRecordMap,
+    type DocumentLoadStatus,
+    type RenderListType,
+    type DocumentFetchType
   } from './MyTypes'
+  import { emptyDocumentRecord } from './MyTypes'
   import { nanoid } from 'nanoid'
+  import MyEditor from './Editor/MyEditor.svelte'
 
   let currentDocuments: DocumentRecordMap = {}
   let documentLoaded: DocumentLoadStatus = {}
@@ -25,35 +26,32 @@
   let documentRenderList: RenderListType[] = []
   let deletedDocumentList: RenderListType[] = []
 
-  $: console.log(currentDocuments)
+  $: console.log(JSON.stringify(currentDocuments))
 
-  function newDocument() {
+  function newDocument(): void {
     const id = nanoid()
-    currentDocuments[id] = {
-      title: '',
-      content: ''
-    }
     documentLoaded[id] = true
+    currentDocuments[id] = emptyDocumentRecord()
     activeDocumentId = id
   }
 
   $: {
     documentRenderList = Object.keys(currentDocuments)
-      .filter((i) => !currentDocuments[i].deleted_status)
+      .filter((i) => !currentDocuments[i].meta.deleted_status)
       .map((i) => {
-        return { id: i, title: currentDocuments[i].title }
+        return { id: i, title: currentDocuments[i].meta.title }
       })
   }
 
   $: {
     deletedDocumentList = Object.keys(currentDocuments)
-      .filter((i) => currentDocuments[i].deleted_status)
+      .filter((i) => currentDocuments[i].meta.deleted_status)
       .map((i) => {
-        return { id: i, title: currentDocuments[i].title }
+        return { id: i, title: currentDocuments[i].meta.title }
       })
   }
 
-  async function moveDocumentToBin(id: string) {
+  async function moveDocumentToBin(id: string): Promise<void> {
     try {
       const response = await fetch(baseUrl + endpoints.deleteDocument + '/' + id, {
         method: 'DELETE',
@@ -82,7 +80,7 @@
     }
   }
 
-  async function fetchDocuments() {
+  async function fetchDocuments(): Promise<void> {
     try {
       const response = await fetch(baseUrl + endpoints.getByField + '/metadatas', {
         method: 'GET',
@@ -94,7 +92,8 @@
         const data: DocumentFetchType = await response.json()
         console.log(data)
         for (let i = 0; i < data.ids.length; i++) {
-          currentDocuments[data.ids[i]] = data.metadatas[i]
+          currentDocuments[data.ids[i]] = emptyDocumentRecord()
+          currentDocuments[data.ids[i]].meta = data.metadatas[i]
           documentLoaded[data.ids[i]] = false
         }
       } else if (!response.ok && response.status === 503) {
@@ -108,7 +107,18 @@
     }
   }
 
-  onMount(fetchDocuments)
+  onMount(() => {
+    fetchDocuments()
+    window.electron.ipcRenderer.on('before-quit', async () => {
+      console.log('before-quit')
+      await fetch(baseUrl + commands.quit, {
+        method: 'GET',
+        headers: {
+          cors: 'no-cors'
+        }
+      })
+    })
+  })
 </script>
 
 <!-- <svelte:window on:keydown={(e) => console.log(e)} /> -->
@@ -157,7 +167,8 @@
       {#if !activeDocumentId}
         <DocumentList />
       {:else}
-        <TipTap bind:currentDocuments bind:documentLoaded bind:activeDocumentId />
+        <MyEditor bind:currentDocuments bind:documentLoaded bind:activeDocumentId />
+        <!-- <TipTap bind:currentDocuments bind:documentLoaded bind:activeDocumentId /> -->
       {/if}
     </Resizable.Pane>
     <!-- <Resizable.Handle class="z-0" />

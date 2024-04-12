@@ -2,24 +2,44 @@ export type DocumentRecordMap = {
   [key: string]: DocumentRecord
 }
 
+export const MimeTypes = ['text/markdown', 'text/plain'] as const
+
+export type Mime = (typeof MimeTypes)[number]
+
 export type DocumentRecord = {
-  color?: string
-  starred?: boolean
-  title: string
-  content?: string
-  deleted_status?: boolean
-  deleted_timeLeft?: number
+  meta: {
+    color?: string
+    starred?: boolean
+    title: string
+    displayText?: string
+    mime: Mime
+    deleted_status?: boolean
+    deleted_timeLeft?: number
+  }
+  plainText: string
+}
+
+export function emptyDocumentRecord(): DocumentRecord {
+  return {
+    meta: {
+      title: '',
+      mime: 'text/markdown'
+    },
+    plainText: ''
+  }
 }
 
 export type DocumentFetchType = {
   ids: string[]
   data?: any[]
-  documents?: string[]
+  documents?: string[] // PlainText
   embeddings?: number[][]
   metadatas: {
     color?: string
     starred?: boolean
     title: string
+    mime: Mime
+    displayText?: string
     deleted_status?: boolean
     deleted_timeLeft?: number
   }[]

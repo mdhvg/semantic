@@ -9,8 +9,36 @@
     "name": "Madhav Goyal",
     "email": "madhavgyl1@gmail.com"
   },
+  "build": {
+    "extraFiles": [
+      {
+        "from": "resources/${os}",
+        "to": "resources/",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "backend",
+        "to": "backend",
+        "filter": [
+          "!**/__pycache__",
+          "!**/*.pyc",
+          "!**/db",
+          "!**/.vscode",
+          "!**/.env"
+        ]
+      },
+      {
+        "from": "resources/common",
+        "to": "resources",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ]
+  },
   "scripts": {
-    "setup": "set ONLY_SETUP=true && npm run dev",
     "format": "prettier --plugin prettier-plugin-svelte --write .",
     "lint": "eslint . --ext .js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
@@ -68,7 +96,12 @@
     "mode-watcher": "^0.2.2",
     "nanoid": "^5.0.6",
     "paneforge": "^0.0.2",
+    "rehype-stringify": "^10.0.0",
+    "remark-gfm": "^4.0.0",
+    "remark-parse": "^11.0.0",
+    "remark-rehype": "^11.1.0",
     "tailwind-merge": "^2.2.1",
-    "tailwind-variants": "^0.2.0"
+    "tailwind-variants": "^0.2.0",
+    "unified": "^11.0.4"
   }
 }

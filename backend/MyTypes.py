@@ -25,18 +25,21 @@ class Fields(BaseModel):
         return v
 
 
-class DocumentRecord(BaseModel):
+class DocumentRecordMeta(BaseModel):
     color: Optional[str] = None
     starred: Optional[bool] = None
     title: str
-    # TODO: Make textContent and displayContent separate fields
-    # textContent will contain the text content of the document
-    # displayContent will contain the text content of the document in HTML format
-    # This will allow the user to view the document in a browser and also allow for
-    # better search indexing by the model
-    content: str
+    displayText: Optional[str] = None
+    mime: Literal["text/markdown", "text/plain"] = "text/markdown"
     deleted_status: Optional[bool] = None
     deleted_timeLeft: Optional[int] = None
+
+    @root_validator(pre=True)
+    def check_plainText(cls, values):
+        plainText, displayText = values.get("plainText"), values.get("displayText")
+        if displayText is None:
+            values["displayText"] = plainText
+        return values
 
     @root_validator(pre=True)
     def check_timeLeft(cls, values):
@@ -46,3 +49,8 @@ class DocumentRecord(BaseModel):
         if deleted_status and deleted_timeLeft is None:
             raise ValidationError("timeLeft is required when status is true")
         return values
+
+
+class DocumentRecord(BaseModel):
+    meta: DocumentRecordMeta
+    plainText: str

@@ -1,7 +1,7 @@
 import { dirname, resolve } from 'path'
 import { existsSync, mkdirSync, rmSync, appendFileSync, writeFileSync } from 'fs'
 import { fileURLToPath } from 'url'
-import { exec, execSync } from 'child_process'
+import { execSync, spawn } from 'child_process'
 
 import AdmZip from 'adm-zip'
 import axios from 'axios'
@@ -41,18 +41,25 @@ import { Directories } from './Backend.config'
 class Backend {
   private mode: Mode
   private platform: NodeJS.Platform
-  private resolvedRootDir: string = resolve(dirname(fileURLToPath(import.meta.url)), '../../')
+  private resolvedRootDir: string
   private directoryGroup: PlatformDirectories
 
   constructor(mode: Mode) {
+    console.log(resolve(dirname(fileURLToPath(import.meta.url))))
     this.mode = mode
     this.platform = process.platform
     this.directoryGroup = Directories[this.mode][this.platform]
+
+    // Resolve project root directory based on mode
+    this.resolvedRootDir = resolve(
+      dirname(fileURLToPath(import.meta.url)),
+      this.mode === 'development' ? '../..' : '../../../..'
+    )
   }
 
   public async init(): Promise<boolean> {
     // Check for existence of embedded python
-    const pythonDir = resolve(this.resolvedRootDir, this.directoryGroup.python.path)
+    const pythonDir = resolve(this.resolvedRootDir, this.directoryGroup.python.path, 'python.exe')
     if (!existsSync(pythonDir)) {
       const success = await this.setupPython()
       if (!success) {
@@ -101,6 +108,7 @@ class Backend {
       console.log('Setting up for Windows')
       const pythonDir = resolve(this.resolvedRootDir, this.directoryGroup.python.path)
       const tempDir = resolve(this.resolvedRootDir, this.directoryGroup.temp.path)
+
       mkdirSync(pythonDir, { recursive: true })
       mkdirSync(tempDir, { recursive: true })
 
@@ -165,11 +173,13 @@ class Backend {
         this.directoryGroup.python.path,
         'python.exe'
       )
-      console.log(
-        `cd ${resolve(this.resolvedRootDir, this.directoryGroup.backend.path)} && ${pythonPath} -m uvicorn main:api.app --port 8080`
-      )
-      exec(
-        `cd ${resolve(this.resolvedRootDir, this.directoryGroup.backend.path)} && ${pythonPath} -m uvicorn main:api.app --port 8080`
+      spawn(
+        pythonPath,
+        [resolve(this.resolvedRootDir, this.directoryGroup.backend.path, 'main.py')],
+        {
+          cwd: resolve(this.resolvedRootDir, this.directoryGroup.backend.path),
+          shell: true
+        }
       )
     }
   }

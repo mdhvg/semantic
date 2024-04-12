@@ -19,7 +19,7 @@
     searchResultList = Object.keys(searchResult).map((i) => {
       return {
         id: i,
-        title: searchResult[i].title,
+        title: searchResult[i].meta.title,
         distance: searchResult[i].distance
       }
     })

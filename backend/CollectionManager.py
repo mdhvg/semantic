@@ -25,6 +25,11 @@ class CollectionLoader:
         self.client: ClientAPI = chromadb.PersistentClient(path=path)
         self.collection_status: dict[str, bool] = {self.collection_base_name: False}
         self._collection = None
+        self.ids: dict = {
+            "document": set(),
+            "deleted": set(),
+        }
+
         threading.Thread(target=self.create_collection, daemon=True).start()
 
     @property
@@ -53,3 +58,5 @@ class CollectionLoader:
         end = time.time()
         elapsed_time = end - start
         print(f"Collection loaded in {elapsed_time} seconds")
+
+        self.ids["document"] = set(self.collection.get(include=[])["ids"])

@@ -1,5 +1,6 @@
 import os
 import sys
+
 root = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(root)
 os.chdir(root)
@@ -20,6 +21,7 @@ from CollectionManager import CollectionLoader
 from SemanticMiddleware import SemanticMiddleware
 from MyTypes import DocumentRecord
 
+
 class SemanticAPI:
     def __init__(self):
         self.app = FastAPI(
@@ -30,17 +32,16 @@ class SemanticAPI:
         self.collection_loader = CollectionLoader()
         self.collection_name = self.collection_loader.collection_base_name
         self.collection_status = self.collection_loader.collection_status
-        self.ids: dict = {
-            "document": set(),
-            "deleted": set(),
-        }
         self.setup_middleware()
-        asyncio.create_task(self.get_ids())
         self.run()
 
     @property
     def collection(self):
         return self.collection_loader.collection
+
+    @property
+    def ids(self):
+        return self.collection_loader.ids
 
     def setup_middleware(self):
         self.app.add_middleware(
@@ -54,14 +55,11 @@ class SemanticAPI:
             allow_headers=["*"],
         )
 
-    async def get_ids(self):
-        while not self.collection_status[self.collection_name]:
-            print("document", self.collection)
-            await asyncio.sleep(1)
-        self.ids["document"] = set(self.collection.get(include=[])["ids"])  # type: ignore
-        print(self.ids)
-
     def run(self):
+        @self.app.get("/quit")
+        def app_shutdown():
+            quit()
+
         @self.app.get("/api/document/search/{q}")
         async def search(q: str):
             results = self.collection.query(  # type: ignore
@@ -96,20 +94,20 @@ class SemanticAPI:
             metadata = [
                 {
                     key: value
-                    for key, value in document.model_dump().items()
-                    if value is not None and key != "content"
+                    for key, value in document.model_dump()["meta"].items()
+                    if value is not None
                 }
             ]
             if id in self.ids["document"]:
                 self.collection.update(  # type: ignore
-                    ids=[id], documents=[document.content], metadatas=metadata
+                    ids=[id], documents=[document.plainText], metadatas=metadata
                 )
                 return JSONResponse(
                     content={"status": f"{id} updated"}, status_code=200
                 )
             self.collection.add(  # type: ignore
                 ids=[id],
-                documents=[document.content],
+                documents=[document.plainText],
                 metadatas=metadata,
             )
             self.ids["document"].add(id)
@@ -136,4 +134,4 @@ class SemanticAPI:
 
 
 api = SemanticAPI()
-# uvicorn.run(app=api.app, host="0.0.0.0", port=8080, log_level="info")
+uvicorn.run(app=api.app, host="localhost", port=8080, log_level="info")

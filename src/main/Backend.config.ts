@@ -17,14 +17,14 @@ export const Directories = {
   },
   production: {
     win32: {
-      resources: { path: 'resources/win32' },
+      resources: { path: 'resources' },
       python: { path: 'python' },
       temp: { path: 'temp' },
       backend: { path: 'backend' },
       requirements: { path: 'resources/requirements.txt' }
     },
     linux: {
-      resources: { path: 'resources/linux' },
+      resources: { path: 'resources' },
       python: { path: 'python' },
       temp: { path: 'temp' },
       backend: { path: 'backend' },

@@ -68,3 +68,9 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+@layer base {
+  li:has(p > input[checked]) {
+    @apply text-muted-foreground;
+  }
+}
