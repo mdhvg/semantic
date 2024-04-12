@@ -67,7 +67,6 @@ class SemanticAPI:
                 n_results=5,
                 include=["data", "distances", "metadatas"],
             )
-            print(results)
             return results
 
         @self.app.get("/api/document/count")

@@ -26,8 +26,6 @@
   let documentRenderList: RenderListType[] = []
   let deletedDocumentList: RenderListType[] = []
 
-  $: console.log(JSON.stringify(currentDocuments))
-
   function newDocument(): void {
     const id = nanoid()
     documentLoaded[id] = true
@@ -90,7 +88,6 @@
       })
       if (response.ok) {
         const data: DocumentFetchType = await response.json()
-        console.log(data)
         for (let i = 0; i < data.ids.length; i++) {
           currentDocuments[data.ids[i]] = emptyDocumentRecord()
           currentDocuments[data.ids[i]].meta = data.metadatas[i]

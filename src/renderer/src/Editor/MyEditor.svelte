@@ -57,7 +57,6 @@
   export let activeDocumentId: string
 
   $: if (activeDocumentId && !documentLoaded[activeDocumentId]) {
-    console.log('2')
     loadContent(activeDocumentId).then((value) => {
       currentDocuments[activeDocumentId].plainText = value
       documentLoaded[activeDocumentId] = true
@@ -67,7 +66,6 @@
   }
 
   $: if (activeDocumentId !== lastActiveDocumentId) {
-    console.log('1')
     if (currentDocuments[activeDocumentId]) {
       previewContent = currentDocuments[activeDocumentId].meta.displayText
       title = currentDocuments[activeDocumentId].meta.title

@@ -30,7 +30,7 @@ class DocumentRecordMeta(BaseModel):
     starred: Optional[bool] = None
     title: str
     displayText: Optional[str] = None
-    mime: Literal["text/markdown", "text/plain"] = "text/markdown"
+    mime: Literal["text/markdown", "text/plain", "text/html"] = "text/markdown"
     deleted_status: Optional[bool] = None
     deleted_timeLeft: Optional[int] = None
 

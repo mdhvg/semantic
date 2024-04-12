@@ -2,7 +2,7 @@ export type DocumentRecordMap = {
   [key: string]: DocumentRecord
 }
 
-export const MimeTypes = ['text/markdown', 'text/plain'] as const
+export const MimeTypes = ['text/markdown', 'text/plain', 'text/html'] as const
 
 export type Mime = (typeof MimeTypes)[number]
 
