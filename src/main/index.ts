@@ -2,7 +2,7 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/common/icon.png?asset'
-import { Backend } from './Backend'
+// import { Backend } from './Backend'
 
 let mainWindow: BrowserWindow
 
@@ -51,10 +51,11 @@ app.whenReady().then(async () => {
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
 
-  const backendHandler = new Backend(
-    import.meta.env.MODE === 'development' ? 'development' : 'production'
-  )
-  if (await backendHandler.init()) backendHandler.startBackend()
+  // const backendHandler = new Backend(
+  //   import.meta.env.MODE === 'development' ? 'development' : 'production'
+  // )
+  // backendHandler.init()
+  // if (await backendHandler.init()) backendHandler.startBackend()
 
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.

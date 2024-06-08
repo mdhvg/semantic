@@ -1,34 +1,37 @@
+const commonPaths = {
+  relativeRoot: { path: '../..' },
+  python: { path: 'setup/python' },
+  temp: { path: 'setup/temp' },
+  backend: { path: 'backend' },
+  requirements: { path: 'resources/common/requirements.txt' }
+}
+
+const productionPaths = {
+  relativeRoot: { path: '../../../..' },
+  resources: { path: 'resources' },
+  python: { path: 'python' },
+  temp: { path: 'temp' },
+  backend: { path: 'backend' },
+  requirements: { path: 'resources/requirements.txt' }
+}
+
 export const Directories = {
   development: {
     win32: {
-      resources: { path: 'resources/win32' },
-      python: { path: 'setup/python' },
-      temp: { path: 'setup/temp' },
-      backend: { path: 'backend' },
-      requirements: { path: 'resources/common/requirements.txt' }
+      ...commonPaths,
+      resources: { path: 'resources/win32' }
     },
     linux: {
-      resources: { path: 'resources/linux' },
-      python: { path: 'setup/python' },
-      temp: { path: 'setup/temp' },
-      backend: { path: 'backend' },
-      requirements: { path: 'resources/common/requirements.txt' }
+      ...commonPaths,
+      resources: { path: 'resources/linux' }
     }
   },
   production: {
     win32: {
-      resources: { path: 'resources' },
-      python: { path: 'python' },
-      temp: { path: 'temp' },
-      backend: { path: 'backend' },
-      requirements: { path: 'resources/requirements.txt' }
+      ...productionPaths
     },
     linux: {
-      resources: { path: 'resources' },
-      python: { path: 'python' },
-      temp: { path: 'temp' },
-      backend: { path: 'backend' },
-      requirements: { path: 'resources/requirements.txt' }
+      ...productionPaths
     }
   }
 }
