@@ -3,6 +3,7 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/common/icon.png?asset'
 import { Backend } from './Backend'
+import { create, insert, search } from '@orama/orama'
 
 let mainWindow: BrowserWindow
 
@@ -50,6 +51,17 @@ function createWindow(): void {
 app.whenReady().then(async () => {
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
+
+  const db = await create({
+    schema: {
+      title: 'string',
+      director: 'string',
+      isFavorite: 'boolean',
+      year: 'number'
+    }
+  })
+
+  console.log(db)
 
   const backendHandler = new Backend(
     import.meta.env.MODE === 'development' ? 'development' : 'production'

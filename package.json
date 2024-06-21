@@ -86,6 +86,8 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.0",
     "@electron-toolkit/utils": "^3.0.0",
+    "@orama/orama": "^2.0.20",
+    "@orama/plugin-data-persistence": "^2.0.20",
     "adm-zip": "^0.5.12",
     "axios": "^1.6.8",
     "bits-ui": "^0.18.6",
