@@ -105,16 +105,11 @@
   }
 
   onMount(() => {
-    fetchDocuments()
-    window.electron.ipcRenderer.on('before-quit', async () => {
-      console.log('before-quit')
-      await fetch(baseUrl + commands.quit, {
-        method: 'GET',
-        headers: {
-          cors: 'no-cors'
-        }
-      })
+    // fetchDocuments()
+    window.electron.ipcRenderer.on('status', (event, arg) => {
+      console.log(event, arg)
     })
+    // console.log(window.electron.ipcRenderer.sendSync('db'))
   })
 </script>
 

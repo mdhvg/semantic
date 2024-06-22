@@ -139,3 +139,6 @@ out
 # python setup
 setup
 Miniforge
+
+# Orama database
+*.msp

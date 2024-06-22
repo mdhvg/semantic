@@ -2,32 +2,39 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/common/icon.png?asset'
-import { Backend } from './Backend'
-import { create, insert, search } from '@orama/orama'
+import type { AnyOrama, PartialSchemaDeep, TypedDocument } from '@orama/orama'
+import { Orama, insert, search, update } from '@orama/orama'
+import { VectorSchema, createOrLoadDB, dbPath } from './DBHandler'
+import { persistToFile, restoreFromFile } from '@orama/plugin-data-persistence/server'
 
+let db: Orama<typeof VectorSchema>
+let dbLoaded: boolean = false
 let mainWindow: BrowserWindow
 
 function createWindow(): void {
   // Create the browser window.
+  console.time('mainWindow.show')
   mainWindow = new BrowserWindow({
     width: 1600,
     height: 900,
     show: false,
-    autoHideMenuBar: true,
+    autoHideMenuBar: false,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.mjs'),
-      sandbox: false
+      sandbox: false,
+      devTools: is.dev
     }
   })
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
+    if (is.dev) mainWindow.webContents.openDevTools()
+    console.timeEnd('mainWindow.show')
   })
 
-  mainWindow.on('close', (event) => {
-    event.preventDefault()
-    mainWindow.webContents.send('before-quit')
+  mainWindow.on('close', () => {
+    persistToFile(db, 'binary', dbPath)
     mainWindow.destroy()
   })
 
@@ -50,23 +57,7 @@ function createWindow(): void {
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(async () => {
   // Set app user model id for windows
-  electronApp.setAppUserModelId('com.electron')
-
-  const db = await create({
-    schema: {
-      title: 'string',
-      director: 'string',
-      isFavorite: 'boolean',
-      year: 'number'
-    }
-  })
-
-  console.log(db)
-
-  const backendHandler = new Backend(
-    import.meta.env.MODE === 'development' ? 'development' : 'production'
-  )
-  if (await backendHandler.init()) backendHandler.startBackend()
+  electronApp.setAppUserModelId('com.semantic.app')
 
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.
@@ -78,12 +69,24 @@ app.whenReady().then(async () => {
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
 
+  // ipcMain.on('db', (event) => {
+  //   if (db) {
+  //     event.returnValue = db.id
+  //   }
+
+  startStatusNotifier()
+
   createWindow()
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
+  })
+
+  createOrLoadDB(VectorSchema).then((dbInstance) => {
+    db = dbInstance
+    dbLoaded = true
   })
 })
 // Quit when all windows are closed, except on macOS. There, it's common
@@ -97,3 +100,28 @@ app.on('window-all-closed', () => {
 
 // In this file you can include the rest of your app"s specific main process
 // code. You can also put them in separate files and require them here.
+
+async function startStatusNotifier(): Promise<void> {
+  console.log('startStatusNotifier')
+  while (!dbLoaded) {
+    if (mainWindow) {
+      mainWindow.webContents.send('status', { dbLoaded })
+    }
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+  }
+  if (mainWindow) {
+    mainWindow.webContents.send('status', { dbLoaded })
+  }
+}
+
+ipcMain.on('save', async function (event, args): Promise<void> {
+  if (db) {
+    const exists = await search(db, { exact: true, where: { id: args.id } })
+    if (exists.count > 0) {
+      update(db, args.id, args)
+    } else {
+      insert(db, args)
+    }
+  }
+  event.returnValue = 'DB not loaded'
+})
