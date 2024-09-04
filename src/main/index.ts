@@ -2,14 +2,20 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/common/icon.png?asset'
-import type { AnyOrama, PartialSchemaDeep, TypedDocument } from '@orama/orama'
-import { Orama, insert, search, update } from '@orama/orama'
-import { VectorSchema, createOrLoadDB, dbPath } from './DBHandler'
+import { Orama, insert, search, update, create, Results, Result, TypedDocument } from '@orama/orama'
+import { connectToEmbeddingServer, startEmbeddingServer } from './ServerHandler'
 import { persistToFile, restoreFromFile } from '@orama/plugin-data-persistence/server'
+import { ServerConnector } from './ServerConnector'
+import type { ServerMessageData } from './ServerConnector'
+import { existsSync, readFileSync, writeFile } from 'fs'
+import { config } from '$shared/config'
+import { FetchDocument, ServerStatus, MetadataSchema } from '$shared/types'
+import { readFile } from 'fs'
 
-let db: Orama<typeof VectorSchema>
-let dbLoaded: boolean = false
+let metadb: Orama<typeof MetadataSchema>
+let dbStatus: boolean = false
 let mainWindow: BrowserWindow
+let serverConnector: ServerConnector
 
 function createWindow(): void {
   // Create the browser window.
@@ -34,7 +40,7 @@ function createWindow(): void {
   })
 
   mainWindow.on('close', () => {
-    persistToFile(db, 'binary', dbPath)
+    persistToFile(metadb, 'binary', 'metaDb.msp')
     mainWindow.destroy()
   })
 
@@ -67,27 +73,51 @@ app.whenReady().then(async () => {
   })
 
   // IPC test
-  ipcMain.on('ping', () => console.log('pong'))
+  // ipcMain.on('ping', () => console.log('pong'))
+  //ipcMain.on('embedding-server', (_, args: ServerMessageData) => {
+  //serverConnector.send(args)
+  //})
 
   // ipcMain.on('db', (event) => {
   //   if (db) {
   //     event.returnValue = db.id
   //   }
 
-  startStatusNotifier()
+  // startStatusNotifier()
+  ipcMain.handle('server-status', getDBStatus)
+  ipcMain.handle('fetch-documents', fetchDocuments)
+  ipcMain.handle('get-document', (_, id: string) => getDocument(id))
+  ipcMain.handle('save-document', (_, id: string, content: string) => {
+    saveDocument(id, content)
+  })
 
   createWindow()
 
-  app.on('activate', function () {
+  //serverConnector = ServerConnector.getInstance()
+  //serverConnector.connect()
+
+  app.on('activate', function() {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 
-  createOrLoadDB(VectorSchema).then((dbInstance) => {
-    db = dbInstance
-    dbLoaded = true
+  // TODO: Implement the startEmbeddingServer which will pull the server from repository, setup the environment and start the server. And only start the server for all the subsequent runs.
+  // startEmbeddingServer()
+  // connectToEmbeddingServer()
+
+  // startStatusNotifier()
+  metadb = await createOrLoadDB()
+  await insert(metadb, {
+    id: 'nig',
+    title: 'omg',
+    mime: 'text/plain',
+    deleted: false,
+    deletedTimeLeft: 1,
+    vector: [...Array(1000).keys()]
   })
+
+  fetchDocuments()
 })
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
@@ -103,25 +133,99 @@ app.on('window-all-closed', () => {
 
 async function startStatusNotifier(): Promise<void> {
   console.log('startStatusNotifier')
-  while (!dbLoaded) {
-    if (mainWindow) {
-      mainWindow.webContents.send('status', { dbLoaded })
+  while (app)
+    while (!dbStatus) {
+      if (mainWindow) {
+        mainWindow.webContents.send('status', { dbStatus })
+      }
+      await new Promise((resolve) => setTimeout(resolve, 1000))
     }
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-  }
   if (mainWindow) {
-    mainWindow.webContents.send('status', { dbLoaded })
+    mainWindow.webContents.send('status', { dbStatus })
   }
 }
 
-ipcMain.on('save', async function (event, args): Promise<void> {
-  if (db) {
-    const exists = await search(db, { exact: true, where: { id: args.id } })
+async function createOrLoadDB(): Promise<Orama<typeof MetadataSchema>> {
+  let db: Orama<typeof MetadataSchema>
+  if (existsSync(config.dbFile)) {
+    // start time for restore
+    console.time('restore')
+    db = await restoreFromFile('binary', config.dbFile)
+    console.timeEnd('restore')
+  } else {
+    console.time('create')
+    db = await create({
+      schema: MetadataSchema,
+      components: {}
+    })
+    console.timeEnd('create')
+  }
+  dbStatus = true
+  return db
+}
+
+ipcMain.on('save', async function(event, args): Promise<void> {
+  if (metadb) {
+    const exists = await search(metadb, { exact: true, where: { id: args.id } })
     if (exists.count > 0) {
-      update(db, args.id, args)
+      update(metadb, args.id, args)
     } else {
-      insert(db, args)
+      insert(metadb, args)
     }
   }
   event.returnValue = 'DB not loaded'
 })
+
+ipcMain.on('search', async function(event, args): Promise<void> {
+  if (metadb) {
+    const result = await search(metadb, {
+      term: args.term,
+      mode: 'vector'
+    })
+    event.returnValue = result
+  }
+})
+
+function getDBStatus(): ServerStatus {
+  return ServerStatus.RUNNING
+  //return ServerStatus[dbStatus ? 'RUNNING' : 'STOPPED']
+}
+
+async function fetchDocuments(): Promise<FetchDocument[]> {
+  await insert(metadb, {
+    id: Math.random().toString(36).substring(7),
+    title: 'title1',
+    mime: 'text/plain',
+    deleted: false,
+    deletedTimeLeft: 1,
+    vector: [...Array(1000).keys()]
+  })
+  const allDocument: Results<FetchDocument> = await search(metadb, {
+    term: '',
+    mode: 'fulltext'
+  })
+  return allDocument.hits.map((hit): FetchDocument => hit.document)
+}
+
+function getDocument(id: string): string {
+  if (!id.length) {
+    return ''
+  }
+  const filePath = join(config.notesDir, `${id}.txt`)
+  if (!existsSync(filePath)) {
+    return ''
+  }
+  const content = readFileSync(filePath, 'utf-8')
+  return content
+}
+
+function saveDocument(id: string, content: string): void {
+  console.log(id)
+  console.log(content)
+  const filePath = join(config.notesDir, `${id}.txt`)
+  writeFile(filePath, content, (err) => {
+    if (err) {
+      console.log(err)
+    }
+  })
+}

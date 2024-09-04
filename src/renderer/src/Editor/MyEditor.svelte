@@ -43,6 +43,7 @@
   import rehypeStringify from 'rehype-stringify'
   import { cleanHTML } from '../utils'
   import Input from '$lib/components/ui/input/input.svelte'
+  import type { DocumentContent } from '$shared/types'
 
   let preview: boolean = true
   let readOnly: boolean = false
@@ -53,34 +54,26 @@
   let lastActiveDocumentId: string = ''
 
   export let currentDocuments: DocumentRecordMap
-  export let documentLoaded: DocumentLoadStatus
+  export let documentContent: DocumentContent
   export let activeDocumentId: string
 
-  $: if (activeDocumentId && !documentLoaded[activeDocumentId]) {
+  $: if (activeDocumentId && !documentContent[activeDocumentId].loaded) {
     loadContent(activeDocumentId).then((value) => {
-      currentDocuments[activeDocumentId].plainText = value
-      documentLoaded[activeDocumentId] = true
-      content = currentDocuments[activeDocumentId].plainText
-      currentDocuments[activeDocumentId].meta.deleted_status && (readOnly = true)
+      documentContent[activeDocumentId] = { loaded: true, content: value }
+      content = documentContent[activeDocumentId].content
     })
   }
 
   $: if (activeDocumentId !== lastActiveDocumentId) {
     if (currentDocuments[activeDocumentId]) {
-      previewContent = currentDocuments[activeDocumentId].meta.displayText
-      title = currentDocuments[activeDocumentId].meta.title
-      content = currentDocuments[activeDocumentId].plainText
-      mimeType = currentDocuments[activeDocumentId].meta.mime
+      previewContent = content
     }
     lastActiveDocumentId = activeDocumentId
   }
 
   async function loadContent(activeDocumentId: string): Promise<string> {
-    const response = await fetch(`${baseUrl}${endpoints.getContent}/${activeDocumentId}`, {
-      method: 'GET'
-    })
-    const data = await response.json()
-    return data.documents[0]
+    const document = await window.api.getDocument(activeDocumentId)
+    return document
   }
 
   async function sendPost(): Promise<void> {
@@ -214,7 +207,7 @@
               aria-expanded={open}
               class="w-[200px] justify-between"
             >
-              {currentDocuments[activeDocumentId].meta.mime}
+              text/markdown
               <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </Popover.Trigger>
@@ -243,7 +236,13 @@
         </Popover.Root>
       </div>
       <Button class="w-full h-full" on:click={togglePreview}><Label>Toggle Preview</Label></Button>
-      <Button variant="default" class="w-full h-full" on:click={sendPost}><Save /></Button>
+      <Button
+        variant="default"
+        class="w-full h-full"
+        on:click={() => {
+          window.api.saveDocument(activeDocumentId, documentContent[activeDocumentId].content)
+        }}><Save /></Button
+      >
     </div>
   </section>
   <div class="w-full h-full overflow-hidden flex flex-row">
@@ -255,16 +254,17 @@
         : 'w-full'}"
       bind:value={content}
       on:input={() => {
-        currentDocuments[activeDocumentId].plainText = content
-        currentDocuments[activeDocumentId].meta.displayText = previewContent
+        documentContent[activeDocumentId].content = content
       }}
     />
-    {#if preview}<div class="h-full w-1/2 px-3 py-1 overflow-auto prose">
+    {#if preview}
+      <div class="h-full w-1/2 px-3 py-1 overflow-auto prose">
         {#if previewContent}
           {@html previewContent}
         {:else}
           <p class="text-muted-foreground">Nothing to preview</p>
         {/if}
-      </div>{/if}
+      </div>
+    {/if}
   </div>
 </div>

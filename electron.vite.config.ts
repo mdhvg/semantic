@@ -4,16 +4,27 @@ import path from 'path'
 
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin()]
+    plugins: [externalizeDepsPlugin()],
+    resolve: {
+      alias: {
+        $shared: path.resolve(__dirname, './src/shared')
+      }
+    }
   },
   preload: {
-    plugins: [externalizeDepsPlugin()]
+    plugins: [externalizeDepsPlugin()],
+    resolve: {
+      alias: {
+        $shared: path.resolve(__dirname, './src/shared')
+      }
+    }
   },
   renderer: {
     plugins: [svelte()],
     resolve: {
       alias: {
-        $lib: path.resolve(__dirname, './src/renderer/src/lib')
+        $lib: path.resolve(__dirname, './src/renderer/src/lib'),
+        $shared: path.resolve(__dirname, './src/shared')
       }
     }
   }

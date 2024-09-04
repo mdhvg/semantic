@@ -4,7 +4,8 @@
     "src/renderer/src/env.d.ts",
     "src/renderer/src/**/*",
     "src/renderer/src/**/*.svelte",
-    "src/preload/*.d.ts"
+    "src/preload/*.d.ts",
+    "src/shared/**/*",
   ],
   "compilerOptions": {
     "verbatimModuleSyntax": true,
@@ -20,12 +21,12 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "$lib": [
-        "./src/renderer/src/lib"
-      ],
       "$lib/*": [
-        "./src/renderer/src/lib/*"
+        "src/renderer/src/lib"
       ],
+      "$shared/*": [
+        "src/shared/*"
+      ]
     }
   },
   "references": [

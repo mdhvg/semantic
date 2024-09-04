@@ -19,35 +19,32 @@
   import { emptyDocumentRecord } from './MyTypes'
   import { nanoid } from 'nanoid'
   import MyEditor from './Editor/MyEditor.svelte'
+  import type { DocumentMap, DocumentStatus } from '$shared/types'
 
-  let currentDocuments: DocumentRecordMap = {}
-  let documentLoaded: DocumentLoadStatus = {}
+  let currentDocuments: DocumentMap = {}
+  let documentContent: DocumentStatus = {}
   let activeDocumentId: string
   let documentRenderList: RenderListType[] = []
   let deletedDocumentList: RenderListType[] = []
 
   function newDocument(): void {
     const id = nanoid()
-    documentLoaded[id] = true
-    currentDocuments[id] = emptyDocumentRecord()
+    documentContent[id] = { loaded: true, content: '' }
+    currentDocuments[id] = emptyDocumentRecord(id)
     activeDocumentId = id
   }
 
   $: {
-    documentRenderList = Object.keys(currentDocuments)
-      .filter((i) => !currentDocuments[i].meta.deleted_status)
-      .map((i) => {
-        return { id: i, title: currentDocuments[i].meta.title }
-      })
+    documentRenderList = Object.keys(currentDocuments).map((i) => {
+      return { id: i, title: currentDocuments[i].title }
+    })
   }
 
-  $: {
-    deletedDocumentList = Object.keys(currentDocuments)
-      .filter((i) => currentDocuments[i].meta.deleted_status)
-      .map((i) => {
-        return { id: i, title: currentDocuments[i].meta.title }
-      })
-  }
+  //$: {
+  //  deletedDocumentList = Object.keys(currentDocuments).map((i) => {
+  //    return { id: i, title: currentDocuments[i].title }
+  //  })
+  //}
 
   async function moveDocumentToBin(id: string): Promise<void> {
     try {
@@ -61,9 +58,9 @@
         const updatedDocuments = currentDocuments
         delete updatedDocuments[id]
         currentDocuments = updatedDocuments
-        const updatedDocumentLoaded = documentLoaded
+        const updatedDocumentLoaded = documentContent
         delete updatedDocumentLoaded[id]
-        documentLoaded = updatedDocumentLoaded
+        documentContent = updatedDocumentLoaded
         if (activeDocumentId == id) {
           activeDocumentId = ''
         }
@@ -91,7 +88,7 @@
         for (let i = 0; i < data.ids.length; i++) {
           currentDocuments[data.ids[i]] = emptyDocumentRecord()
           currentDocuments[data.ids[i]].meta = data.metadatas[i]
-          documentLoaded[data.ids[i]] = false
+          documentContent[data.ids[i]] = false
         }
       } else if (!response.ok && response.status === 503) {
         await new Promise((resolve) => setTimeout(resolve, 2000))
@@ -104,11 +101,19 @@
     }
   }
 
-  onMount(() => {
-    // fetchDocuments()
-    window.electron.ipcRenderer.on('status', (event, arg) => {
-      console.log(event, arg)
+  onMount(async () => {
+    console.log(await window.api.serverStatus())
+    window.api.fetchDocuments().then((data) => {
+      console.log(data)
+      for (const document of data) {
+        currentDocuments[document.id] = document
+        documentContent[document.id] = { loaded: false }
+      }
     })
+    // fetchDocuments()
+    //window.electron.ipcRenderer.send('embedding-server', { command: 'start' })
+    //window.electron.ipcRenderer.on('status', (event, arg) => {
+    //console.log(event, arg)
     // console.log(window.electron.ipcRenderer.sendSync('db'))
   })
 </script>
@@ -159,7 +164,7 @@
       {#if !activeDocumentId}
         <DocumentList />
       {:else}
-        <MyEditor bind:currentDocuments bind:documentLoaded bind:activeDocumentId />
+        <MyEditor bind:currentDocuments bind:documentContent bind:activeDocumentId />
         <!-- <TipTap bind:currentDocuments bind:documentLoaded bind:activeDocumentId /> -->
       {/if}
     </Resizable.Pane>
