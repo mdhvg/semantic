@@ -34,6 +34,8 @@
     activeDocumentId = id
   }
 
+  $: console.log(currentDocuments)
+
   $: {
     documentRenderList = Object.keys(currentDocuments).map((i) => {
       return { id: i, title: currentDocuments[i].title }
@@ -45,61 +47,6 @@
   //    return { id: i, title: currentDocuments[i].title }
   //  })
   //}
-
-  async function moveDocumentToBin(id: string): Promise<void> {
-    try {
-      const response = await fetch(baseUrl + endpoints.deleteDocument + '/' + id, {
-        method: 'DELETE',
-        headers: {
-          cors: 'no-cors'
-        }
-      })
-      if (response.ok) {
-        const updatedDocuments = currentDocuments
-        delete updatedDocuments[id]
-        currentDocuments = updatedDocuments
-        const updatedDocumentLoaded = documentContent
-        delete updatedDocumentLoaded[id]
-        documentContent = updatedDocumentLoaded
-        if (activeDocumentId == id) {
-          activeDocumentId = ''
-        }
-      } else if (!response.ok && response.status === 503) {
-        await new Promise((resolve) => setTimeout(resolve, 2000))
-        moveDocumentToBin(id)
-      } else {
-        throw new Error(`Server is down with status ${response.status}`)
-      }
-    } catch (error) {
-      console.log('Error:', error)
-    }
-  }
-
-  async function fetchDocuments(): Promise<void> {
-    try {
-      const response = await fetch(baseUrl + endpoints.getByField + '/metadatas', {
-        method: 'GET',
-        headers: {
-          cors: 'no-cors'
-        }
-      })
-      if (response.ok) {
-        const data: DocumentFetchType = await response.json()
-        for (let i = 0; i < data.ids.length; i++) {
-          currentDocuments[data.ids[i]] = emptyDocumentRecord()
-          currentDocuments[data.ids[i]].meta = data.metadatas[i]
-          documentContent[data.ids[i]] = false
-        }
-      } else if (!response.ok && response.status === 503) {
-        await new Promise((resolve) => setTimeout(resolve, 2000))
-        fetchDocuments()
-      } else {
-        throw new Error(`Server is down with status ${response.status}`)
-      }
-    } catch (error) {
-      console.log('Error:', error)
-    }
-  }
 
   onMount(async () => {
     console.log(await window.api.serverStatus())
@@ -151,7 +98,10 @@
               size="sm"
               variant="ghost"
               on:click={() => {
-                moveDocumentToBin(doc['id'])
+                window.api.deleteDocument(doc['id'])
+                let oldDoc = currentDocuments
+                delete oldDoc[doc['id']]
+                currentDocuments = oldDoc
               }}><Trash2 size={18} /></Button
             >
           </div>
@@ -210,4 +160,4 @@
   <div class="status-bar px-5"><Label class="text-muted-foreground">Status</Label></div>
 </main>
 <!-- Keeping the Navbar below main content keeps the content of search results over main content -->
-<Navbar />
+<Navbar bind:activeDocumentId />

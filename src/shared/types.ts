@@ -11,7 +11,7 @@ export type Document = {
   content: string
 }
 
-export const vectorSize = 1000
+export const vectorSize = 384
 
 export enum MimeType {
   Markdown = 'text/markdown',
@@ -31,18 +31,36 @@ export const MetadataSchema = {
 export type FetchDocument = () => TypedDocument<Orama<typeof MetadataSchema>>
 
 export type DocumentMap = {
-  [key: string]: FetchDocument
+  [key: string]: Partial<ReturnType<FetchDocument>>
 }
 
 export type DocumentStatus =
   | {
-    [key: string]: {
-      loaded: true
-      content: string
+      [key: string]: {
+        loaded: true
+        content: string
+      }
     }
-  }
   | {
-    [key: string]: {
-      loaded: false
+      [key: string]: {
+        loaded: false
+      }
     }
-  }
+
+export type ServerRequest = {
+  id: string
+  content: string
+  size: number
+  isQuery: boolean
+}
+
+export type ServerResponse = {
+  id: string
+  isQuery: boolean
+  vector: number[]
+}
+
+export type SearchDocument = {
+  timestamp: number
+  documents: ReturnType<FetchDocument>[]
+}

@@ -1,5 +1,5 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
-import { ServerStatus, FetchDocument } from '$shared/types'
+import { ServerStatus, FetchDocument, SearchDocument } from '$shared/types'
 
 declare global {
   interface Window {
@@ -8,7 +8,14 @@ declare global {
       serverStatus: ServerStatus
       fetchDocuments: Promise<FetchDocument[]>
       getDocument: (id: string) => Promise<string>
-      saveDocument: (id: string, content: string) => Promise<void>
+      saveDocument: (
+        id: string,
+        documentData: ReturnType<FetchDocument>,
+        content: string
+      ) => Promise<void>
+      deleteDocument: (id: string) => Promise<void>
+      searchDocument: (query: string) => Promise<void>
+      onSearchResult: (callback: (data: SearchDocument) => void) => void
     }
   }
 }

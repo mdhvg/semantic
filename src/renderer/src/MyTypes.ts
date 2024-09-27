@@ -21,20 +21,13 @@ export type DocumentRecord = {
   plainText: string
 }
 
-export function emptyDocumentRecord(id: string): FetchDocument {
+export function emptyDocumentRecord(id: string): Partial<ReturnType<FetchDocument>> {
   return {
     id: id,
     title: '',
     mime: 'text/plain',
     deleted: false,
     deletedTimeLeft: 0
-  }
-  return {
-    meta: {
-      title: '',
-      mime: 'text/markdown'
-    },
-    plainText: ''
   }
 }
 

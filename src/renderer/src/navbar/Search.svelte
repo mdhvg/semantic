@@ -5,61 +5,34 @@
   import Separator from '$lib/components/ui/separator/separator.svelte'
   import Button from '$lib/components/ui/button/button.svelte'
   import { cn } from '$lib/utils'
+  import type { SearchDocument } from '$shared/types'
+  import { onMount } from 'svelte'
 
   let searchQuery: string = ''
   let searchTimeout: ReturnType<typeof setTimeout> | null = null
-  let searchResult: SearchResultsType = {}
-  let searchResultList: SearchRenderListType[] = []
+  let searchResult: SearchDocument
+  export let activeDocumentId: string
 
   $: {
     console.log(searchResult)
   }
 
-  $: {
-    searchResultList = Object.keys(searchResult).map((i) => {
-      return {
-        id: i,
-        title: searchResult[i].meta.title,
-        distance: searchResult[i].distance
-      }
-    })
-    searchResultList = searchResultList.sort((a, b) => {
-      return searchResult[a.id].distance - searchResult[b.id].distance
-    })
-  }
-
   function debounceSearch(): void {
     clearTimeout(searchTimeout)
     searchTimeout = setTimeout(async (): Promise<void> => {
-      try {
-        if (searchQuery.length) {
-          const response = await fetch(baseUrl + endpoints.searchDocument + '/' + searchQuery, {
-            method: 'GET',
-            headers: {
-              cors: 'no-cors'
-            }
-          })
-          if (response.ok) {
-            const data = await response.json()
-            console.log(data)
-            const results: SearchResultsType = {}
-            for (let i = 0; i < data.ids[0].length; i++) {
-              results[data.ids[0][i]] = data.metadatas[0][i]
-              results[data.ids[0][i]].distance = data.distances[0][i]
-            }
-            searchResult = results
-          } else if (!response.ok && response.status === 503) {
-            await new Promise((resolve) => setTimeout(resolve, 2000))
-            debounceSearch()
-          } else {
-            throw new Error(`Server is down with status ${response.status}`)
-          }
-        }
-      } catch (error) {
-        console.error(error)
+      if (searchQuery.length > 0) {
+        window.api.searchDocument(searchQuery)
       }
     }, 1000)
   }
+
+  onMount(() => {
+    window.api.onSearchResult((results: SearchDocument) => {
+      if (!searchResult || results.timestamp > searchResult.timestamp) {
+        searchResult = results
+      }
+    })
+  })
 </script>
 
 <div
@@ -79,21 +52,24 @@
     />
     <SearchIcon class="group-hover/search:fill-current h-2/3 fill-muted-foreground p-1" />
   </div>
-  {#if searchResultList.length !== 0}
+  {#if searchResult && searchResult.documents.length !== 0}
     <div
       class="flex flex-col rounded-lg backdrop-blur-lg border border-border max-h-56 min-h-fit invisible group-focus-within/search:visible shadow-md shadow-border"
     >
-      {#each searchResultList as result, index}
+      {#each searchResult.documents as result, index}
         <Button
           variant="ghost"
           class="rounded-none
                     {index === 0 ? 'rounded-t-lg' : ''}
-                    {index === searchResultList.length - 1 ? 'rounded-b-lg' : ''}
+                    {index === searchResult.documents.length - 1 ? 'rounded-b-lg' : ''}
                         "
+          on:click={() => {
+            activeDocumentId = result.document.id
+          }}
         >
-          {result.title}
+          {result.document.title}
         </Button>
-        {#if index !== searchResultList.length - 1}
+        {#if index !== searchResult.documents.length - 1}
           <Separator />
         {/if}
       {/each}

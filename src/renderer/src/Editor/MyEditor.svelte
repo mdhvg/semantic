@@ -43,7 +43,7 @@
   import rehypeStringify from 'rehype-stringify'
   import { cleanHTML } from '../utils'
   import Input from '$lib/components/ui/input/input.svelte'
-  import type { DocumentContent } from '$shared/types'
+  import type { DocumentContent, DocumentMap } from '$shared/types'
 
   let preview: boolean = true
   let readOnly: boolean = false
@@ -52,8 +52,9 @@
   let previewContent = ''
   let mimeType = 'text/markdown'
   let lastActiveDocumentId: string = ''
+  let currentBracket: [number, number] = [0, 0]
 
-  export let currentDocuments: DocumentRecordMap
+  export let currentDocuments: DocumentMap
   export let documentContent: DocumentContent
   export let activeDocumentId: string
 
@@ -65,28 +66,27 @@
   }
 
   $: if (activeDocumentId !== lastActiveDocumentId) {
+    console.log(activeDocumentId)
+    console.log(currentDocuments)
     if (currentDocuments[activeDocumentId]) {
-      previewContent = content
+      content = documentContent[activeDocumentId].content
+      title = currentDocuments[activeDocumentId].title
     }
     lastActiveDocumentId = activeDocumentId
+  }
+
+  function getCursorPosition(): number {
+    const selection = window.getSelection()
+    if (selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0)
+      return range.startOffset
+    }
+    return 0
   }
 
   async function loadContent(activeDocumentId: string): Promise<string> {
     const document = await window.api.getDocument(activeDocumentId)
     return document
-  }
-
-  async function sendPost(): Promise<void> {
-    let response = await fetch(`${baseUrl}${endpoints.saveDocument}/${activeDocumentId}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(currentDocuments[activeDocumentId])
-    })
-    const data = await response.json()
-    console.log('Save result:')
-    console.log(data)
   }
 
   function togglePreview(): void {
@@ -132,7 +132,7 @@
         placeholder="Title"
         bind:value={title}
         on:input={() => {
-          currentDocuments[activeDocumentId].meta.title = title
+          currentDocuments[activeDocumentId].title = title
         }}
       />
     </div>
@@ -240,7 +240,11 @@
         variant="default"
         class="w-full h-full"
         on:click={() => {
-          window.api.saveDocument(activeDocumentId, documentContent[activeDocumentId].content)
+          window.api.saveDocument(
+            activeDocumentId,
+            currentDocuments[activeDocumentId],
+            documentContent[activeDocumentId].content
+          )
         }}><Save /></Button
       >
     </div>

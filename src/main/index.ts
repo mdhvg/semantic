@@ -2,20 +2,30 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/common/icon.png?asset'
-import { Orama, insert, search, update, create, Results, Result, TypedDocument } from '@orama/orama'
-import { connectToEmbeddingServer, startEmbeddingServer } from './ServerHandler'
+import { Orama, insert, search, update, create, Results, getByID } from '@orama/orama'
+import { connectToEmbeddingServer } from './ServerHandler'
 import { persistToFile, restoreFromFile } from '@orama/plugin-data-persistence/server'
 import { ServerConnector } from './ServerConnector'
 import type { ServerMessageData } from './ServerConnector'
 import { existsSync, readFileSync, writeFile } from 'fs'
 import { config } from '$shared/config'
-import { FetchDocument, ServerStatus, MetadataSchema } from '$shared/types'
+import {
+  FetchDocument,
+  ServerStatus,
+  MetadataSchema,
+  ServerRequest,
+  ServerResponse,
+  vectorSize
+} from '$shared/types'
 import { readFile } from 'fs'
+import { setupPythonServer, startEmbeddingServer } from './Backend'
+import { Delay } from './utils'
 
 let metadb: Orama<typeof MetadataSchema>
 let dbStatus: boolean = false
 let mainWindow: BrowserWindow
 let serverConnector: ServerConnector
+const requestQ: ServerRequest[] = []
 
 function createWindow(): void {
   // Create the browser window.
@@ -39,8 +49,18 @@ function createWindow(): void {
     console.timeEnd('mainWindow.show')
   })
 
+  mainWindow.on('show', () => {
+    setupPythonServer(is.dev).then((value: boolean) => {
+      startEmbeddingServer(value)
+    })
+    serverConnector.connect(config.serverAddress.port, config.serverAddress.host).then(() => {
+      console.log('Connected to server')
+    })
+  })
+
   mainWindow.on('close', () => {
-    persistToFile(metadb, 'binary', 'metaDb.msp')
+    persistToFile(metadb, 'binary', config.dbFile)
+    serverConnector.sendCommand('Quit')
     mainWindow.destroy()
   })
 
@@ -87,16 +107,42 @@ app.whenReady().then(async () => {
   ipcMain.handle('server-status', getDBStatus)
   ipcMain.handle('fetch-documents', fetchDocuments)
   ipcMain.handle('get-document', (_, id: string) => getDocument(id))
-  ipcMain.handle('save-document', (_, id: string, content: string) => {
-    saveDocument(id, content)
+  ipcMain.handle(
+    'save-document',
+    (_, id: string, documentData: ReturnType<FetchDocument>, content: string) => {
+      saveDocument(id, documentData, content)
+    }
+  )
+  ipcMain.handle('delete-document', (_, id: string) => {
+    deleteDocument(id)
+  })
+  ipcMain.handle('search-document', (_, term: string) => {
+    newRequest({ id: '1', isQuery: true, content: term, size: term.length })
   })
 
   createWindow()
 
-  //serverConnector = ServerConnector.getInstance()
-  //serverConnector.connect()
+  serverConnector = ServerConnector.getInstance()
+  serverConnector.onData(async (data: ServerResponse): Promise<void> => {
+    console.log(`Received data from server: ${data.vector.length}`)
+    console.log(data.id, data.isQuery)
+    if (data.isQuery) {
+      await sendSearchResult(data)
+    } else {
+      const document = await getByID<Orama<typeof MetadataSchema>, ReturnType<FetchDocument>>(
+        metadb,
+        data.id
+      )
+      if (document) {
+        document.vector = data.vector
+        update<Orama<typeof MetadataSchema>>(metadb, data.id, document)
+        return
+      }
+      console.log(`Document with id: ${data.id} not found`)
+    }
+  })
 
-  app.on('activate', function() {
+  app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
@@ -108,16 +154,6 @@ app.whenReady().then(async () => {
 
   // startStatusNotifier()
   metadb = await createOrLoadDB()
-  await insert(metadb, {
-    id: 'nig',
-    title: 'omg',
-    mime: 'text/plain',
-    deleted: false,
-    deletedTimeLeft: 1,
-    vector: [...Array(1000).keys()]
-  })
-
-  fetchDocuments()
 })
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
@@ -164,7 +200,7 @@ async function createOrLoadDB(): Promise<Orama<typeof MetadataSchema>> {
   return db
 }
 
-ipcMain.on('save', async function(event, args): Promise<void> {
+ipcMain.on('save', async function (event, args): Promise<void> {
   if (metadb) {
     const exists = await search(metadb, { exact: true, where: { id: args.id } })
     if (exists.count > 0) {
@@ -176,30 +212,12 @@ ipcMain.on('save', async function(event, args): Promise<void> {
   event.returnValue = 'DB not loaded'
 })
 
-ipcMain.on('search', async function(event, args): Promise<void> {
-  if (metadb) {
-    const result = await search(metadb, {
-      term: args.term,
-      mode: 'vector'
-    })
-    event.returnValue = result
-  }
-})
-
 function getDBStatus(): ServerStatus {
   return ServerStatus.RUNNING
   //return ServerStatus[dbStatus ? 'RUNNING' : 'STOPPED']
 }
 
 async function fetchDocuments(): Promise<FetchDocument[]> {
-  await insert(metadb, {
-    id: Math.random().toString(36).substring(7),
-    title: 'title1',
-    mime: 'text/plain',
-    deleted: false,
-    deletedTimeLeft: 1,
-    vector: [...Array(1000).keys()]
-  })
   const allDocument: Results<FetchDocument> = await search(metadb, {
     term: '',
     mode: 'fulltext'
@@ -219,8 +237,23 @@ function getDocument(id: string): string {
   return content
 }
 
-function saveDocument(id: string, content: string): void {
+async function saveDocument(
+  id: string,
+  documentData: Partial<ReturnType<FetchDocument>>,
+  content: string
+): Promise<void> {
+  const document = await getByID<Orama<typeof MetadataSchema>, ReturnType<FetchDocument>>(
+    metadb,
+    id
+  )
+  delete documentData.vector
+  if (document) {
+    update<Orama<typeof MetadataSchema>>(metadb, id, documentData)
+  } else {
+    insert<Orama<typeof MetadataSchema>>(metadb, documentData)
+  }
   console.log(id)
+  console.log(documentData)
   console.log(content)
   const filePath = join(config.notesDir, `${id}.txt`)
   writeFile(filePath, content, (err) => {
@@ -228,4 +261,53 @@ function saveDocument(id: string, content: string): void {
       console.log(err)
     }
   })
+  newRequest({ id, content, size: content.length, isQuery: false })
+}
+
+async function deleteDocument(id: string): Promise<void> {
+  const document = await getByID<Orama<typeof MetadataSchema>, ReturnType<FetchDocument>>(
+    metadb,
+    id
+  )
+  if (document) {
+    document.deleted = true
+    document.deletedTimeLeft = 30
+    update<Orama<typeof MetadataSchema>>(metadb, id, document)
+    console.log(`Document with id: ${id} will be deleted after 30 days`)
+    return
+  }
+  console.log(`Document with id: ${id} not found`)
+}
+
+async function pollRequests(): Promise<void> {
+  while (requestQ.length > 0) {
+    if (!serverConnector.connected) {
+      await Delay(1000)
+    } else {
+      const request = requestQ.shift()
+      if (request) {
+        await serverConnector.sendData(request, request.isQuery)
+      }
+    }
+  }
+}
+
+function newRequest(request: ServerRequest): void {
+  requestQ.push(request)
+  pollRequests()
+}
+
+async function sendSearchResult(data: ServerResponse): Promise<void> {
+  const result = await search<Orama<typeof MetadataSchema>, ReturnType<FetchDocument>>(metadb, {
+    mode: 'vector',
+    includeVectors: false,
+    vector: {
+      value: data.vector,
+      property: 'vector'
+    },
+    similarity: 0.5
+  })
+  const response = { timestamp: Date.now(), documents: result.hits }
+  console.log(response)
+  mainWindow.webContents.send('search-result', response)
 }
