@@ -11,7 +11,7 @@ export type Document = {
   content: string
 }
 
-export const vectorSize = 384
+export const vectorSize = 768
 
 export enum MimeType {
   Markdown = 'text/markdown',

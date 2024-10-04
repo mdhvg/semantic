@@ -33,8 +33,11 @@ function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1600,
     height: 900,
+    minWidth: 800,
+    minHeight: 600,
     show: false,
-    autoHideMenuBar: false,
+    frame: false,
+    autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.mjs'),
@@ -45,6 +48,7 @@ function createWindow(): void {
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
+    mainWindow.setMenuBarVisibility(false)
     if (is.dev) mainWindow.webContents.openDevTools()
     console.timeEnd('mainWindow.show')
   })
@@ -104,6 +108,19 @@ app.whenReady().then(async () => {
   //   }
 
   // startStatusNotifier()
+  ipcMain.handle('close-window', () => {
+    app.quit()
+  })
+  ipcMain.handle('minimize-window', () => {
+    mainWindow.minimize()
+  })
+  ipcMain.handle('maximize-window', () => {
+    if (mainWindow.isMaximized()) {
+      mainWindow.unmaximize()
+    } else {
+      mainWindow.maximize()
+    }
+  })
   ipcMain.handle('server-status', getDBStatus)
   ipcMain.handle('fetch-documents', fetchDocuments)
   ipcMain.handle('get-document', (_, id: string) => getDocument(id))
@@ -142,7 +159,7 @@ app.whenReady().then(async () => {
     }
   })
 
-  app.on('activate', function () {
+  app.on('activate', function() {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
@@ -200,7 +217,7 @@ async function createOrLoadDB(): Promise<Orama<typeof MetadataSchema>> {
   return db
 }
 
-ipcMain.on('save', async function (event, args): Promise<void> {
+ipcMain.on('save', async function(event, args): Promise<void> {
   if (metadb) {
     const exists = await search(metadb, { exact: true, where: { id: args.id } })
     if (exists.count > 0) {
@@ -305,9 +322,9 @@ async function sendSearchResult(data: ServerResponse): Promise<void> {
       value: data.vector,
       property: 'vector'
     },
-    similarity: 0.5
+    similarity: 0.2
   })
+  console.log(result)
   const response = { timestamp: Date.now(), documents: result.hits }
-  console.log(response)
   mainWindow.webContents.send('search-result', response)
 }

@@ -16,6 +16,9 @@ declare global {
       deleteDocument: (id: string) => Promise<void>
       searchDocument: (query: string) => Promise<void>
       onSearchResult: (callback: (data: SearchDocument) => void) => void
+      maximizeWindow: () => Promise<void>
+      minimizeWindow: () => Promise<void>
+      closeWindow: () => Promise<void>
     }
   }
 }

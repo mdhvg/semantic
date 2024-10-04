@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Trash2, Plus } from 'lucide-svelte'
+  import { Trash2, Plus, Square, Minimize2, X } from 'lucide-svelte'
   import DocumentList from './main/DocumentList.svelte'
   import Navbar from './navbar/Navbar.svelte'
   import { Button } from '$lib/components/ui/button'
@@ -48,6 +48,16 @@
   //  })
   //}
 
+  function minimizeWindow(): void {
+    window.api.minimizeWindow()
+  }
+  function maximizeWindow(): void {
+    window.api.maximizeWindow()
+  }
+  function closeWindow(): void {
+    window.api.closeWindow()
+  }
+
   onMount(async () => {
     console.log(await window.api.serverStatus())
     window.api.fetchDocuments().then((data) => {
@@ -67,6 +77,23 @@
 
 <!-- <svelte:window on:keydown={(e) => console.log(e)} /> -->
 <ModeWatcher />
+<nav class="h-10 w-full flex flex-row items-center">
+  <div class="titlebar w-full h-full flex items-center">
+    <Label class="ml-4">Semantic</Label>
+  </div>
+  <div class="traffic-lights h-full ml-auto flex">
+    <Button variant="secondary" class="bg-background h-full" on:click={minimizeWindow}
+      ><Minimize2 color="white" /></Button
+    >
+    <Button variant="secondary" class="bg-background h-full" on:click={maximizeWindow}
+      ><Square color="white" /></Button
+    >
+    <Button variant="secondary" class="bg-background h-full" on:click={closeWindow}
+      ><X color="white" /></Button
+    >
+  </div>
+</nav>
+<Navbar bind:activeDocumentId />
 <main class="h-full w-full flex flex-col">
   <Separator />
   <Resizable.PaneGroup direction="horizontal">
@@ -156,8 +183,5 @@
     </div></Resizable.Pane
   > -->
   </Resizable.PaneGroup>
-  <Separator />
-  <div class="status-bar px-5"><Label class="text-muted-foreground">Status</Label></div>
 </main>
 <!-- Keeping the Navbar below main content keeps the content of search results over main content -->
-<Navbar bind:activeDocumentId />

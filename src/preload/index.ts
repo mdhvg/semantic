@@ -17,7 +17,10 @@ const api = {
   searchDocument: (query: string): Promise<void> => ipcRenderer.invoke('search-document', query),
   onSearchResult: (callback: (data: SearchDocument) => void): void => {
     ipcRenderer.on('search-result', (_, data) => callback(data))
-  }
+  },
+  maximizeWindow: (): Promise<void> => ipcRenderer.invoke('maximize-window'),
+  minimizeWindow: (): Promise<void> => ipcRenderer.invoke('minimize-window'),
+  closeWindow: (): Promise<void> => ipcRenderer.invoke('close-window')
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to
