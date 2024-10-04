@@ -41,7 +41,6 @@
   import remarkGfm from 'remark-gfm'
   import remarkRehype from 'remark-rehype'
   import rehypeStringify from 'rehype-stringify'
-  import { cleanHTML } from '../utils'
   import Input from '$lib/components/ui/input/input.svelte'
   import type { DocumentContent, DocumentMap } from '$shared/types'
 
@@ -100,7 +99,7 @@
         .use(remarkGfm)
         .use(remarkRehype, { allowDangerousHtml: true })
         .use(rehypeStringify, { allowDangerousHtml: true })
-        .processSync(cleanHTML(content))
+        .processSync(content)
     )
   }
 
