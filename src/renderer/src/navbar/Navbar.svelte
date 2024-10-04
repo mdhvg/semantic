@@ -7,14 +7,15 @@
   import { Sun, Moon } from 'lucide-svelte'
   import { Button } from '$lib/components/ui/button'
   import { toggleMode } from 'mode-watcher'
+  export let activeDocumentId: string
 
-  $: selectedModel = 'all-mpnet-base-v2'
+  //$: selectedModel = 'all-mpnet-base-v2'
 </script>
 
-<header class="fixed top-0 left-0 w-full h-16">
+<header class="w-full h-16">
   <div class="inner m-auto flex w-full h-full py-3 gap-2 px-10">
     <Icon class="icon h-full w-10 ml-10" />
-    <Search class="ml-10" />
+    <Search bind:activeDocumentId class="ml-10" />
     <!-- <Popover.Root bind:open let:ids>
             <Popover.Trigger asChild let:builder>
                 <Button

@@ -43,6 +43,7 @@
   import rehypeStringify from 'rehype-stringify'
   import { cleanHTML } from '../utils'
   import Input from '$lib/components/ui/input/input.svelte'
+  import type { DocumentContent, DocumentMap } from '$shared/types'
 
   let preview: boolean = true
   let readOnly: boolean = false
@@ -51,49 +52,41 @@
   let previewContent = ''
   let mimeType = 'text/markdown'
   let lastActiveDocumentId: string = ''
+  let currentBracket: [number, number] = [0, 0]
 
-  export let currentDocuments: DocumentRecordMap
-  export let documentLoaded: DocumentLoadStatus
+  export let currentDocuments: DocumentMap
+  export let documentContent: DocumentContent
   export let activeDocumentId: string
 
-  $: if (activeDocumentId && !documentLoaded[activeDocumentId]) {
+  $: if (activeDocumentId && !documentContent[activeDocumentId].loaded) {
     loadContent(activeDocumentId).then((value) => {
-      currentDocuments[activeDocumentId].plainText = value
-      documentLoaded[activeDocumentId] = true
-      content = currentDocuments[activeDocumentId].plainText
-      currentDocuments[activeDocumentId].meta.deleted_status && (readOnly = true)
+      documentContent[activeDocumentId] = { loaded: true, content: value }
+      content = documentContent[activeDocumentId].content
     })
   }
 
   $: if (activeDocumentId !== lastActiveDocumentId) {
+    console.log(activeDocumentId)
+    console.log(currentDocuments)
     if (currentDocuments[activeDocumentId]) {
-      previewContent = currentDocuments[activeDocumentId].meta.displayText
-      title = currentDocuments[activeDocumentId].meta.title
-      content = currentDocuments[activeDocumentId].plainText
-      mimeType = currentDocuments[activeDocumentId].meta.mime
+      content = documentContent[activeDocumentId].content
+      title = currentDocuments[activeDocumentId].title
     }
     lastActiveDocumentId = activeDocumentId
   }
 
-  async function loadContent(activeDocumentId: string): Promise<string> {
-    const response = await fetch(`${baseUrl}${endpoints.getContent}/${activeDocumentId}`, {
-      method: 'GET'
-    })
-    const data = await response.json()
-    return data.documents[0]
+  function getCursorPosition(): number {
+    const selection = window.getSelection()
+    if (selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0)
+      return range.startOffset
+    }
+    return 0
   }
 
-  async function sendPost(): Promise<void> {
-    let response = await fetch(`${baseUrl}${endpoints.saveDocument}/${activeDocumentId}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(currentDocuments[activeDocumentId])
-    })
-    const data = await response.json()
-    console.log('Save result:')
-    console.log(data)
+  async function loadContent(activeDocumentId: string): Promise<string> {
+    const document = await window.api.getDocument(activeDocumentId)
+    return document
   }
 
   function togglePreview(): void {
@@ -139,7 +132,7 @@
         placeholder="Title"
         bind:value={title}
         on:input={() => {
-          currentDocuments[activeDocumentId].meta.title = title
+          currentDocuments[activeDocumentId].title = title
         }}
       />
     </div>
@@ -214,7 +207,7 @@
               aria-expanded={open}
               class="w-[200px] justify-between"
             >
-              {currentDocuments[activeDocumentId].meta.mime}
+              text/markdown
               <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </Popover.Trigger>
@@ -243,7 +236,17 @@
         </Popover.Root>
       </div>
       <Button class="w-full h-full" on:click={togglePreview}><Label>Toggle Preview</Label></Button>
-      <Button variant="default" class="w-full h-full" on:click={sendPost}><Save /></Button>
+      <Button
+        variant="default"
+        class="w-full h-full"
+        on:click={() => {
+          window.api.saveDocument(
+            activeDocumentId,
+            currentDocuments[activeDocumentId],
+            documentContent[activeDocumentId].content
+          )
+        }}><Save /></Button
+      >
     </div>
   </section>
   <div class="w-full h-full overflow-hidden flex flex-row">
@@ -255,16 +258,17 @@
         : 'w-full'}"
       bind:value={content}
       on:input={() => {
-        currentDocuments[activeDocumentId].plainText = content
-        currentDocuments[activeDocumentId].meta.displayText = previewContent
+        documentContent[activeDocumentId].content = content
       }}
     />
-    {#if preview}<div class="h-full w-1/2 px-3 py-1 overflow-auto prose">
+    {#if preview}
+      <div class="h-full w-1/2 px-3 py-1 overflow-auto prose">
         {#if previewContent}
           {@html previewContent}
         {:else}
           <p class="text-muted-foreground">Nothing to preview</p>
         {/if}
-      </div>{/if}
+      </div>
+    {/if}
   </div>
 </div>

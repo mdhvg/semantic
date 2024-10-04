@@ -102,7 +102,3 @@ python main.py
 - [ ] Enable keybind support
 
 - [ ] Remove developer setup script and replace with development instructions.
-
-```
-
-```

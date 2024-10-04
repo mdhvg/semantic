@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Trash2, Plus } from 'lucide-svelte'
+  import { Trash2, Plus, Square, Minimize2, X } from 'lucide-svelte'
   import DocumentList from './main/DocumentList.svelte'
   import Navbar from './navbar/Navbar.svelte'
   import { Button } from '$lib/components/ui/button'
@@ -19,107 +19,81 @@
   import { emptyDocumentRecord } from './MyTypes'
   import { nanoid } from 'nanoid'
   import MyEditor from './Editor/MyEditor.svelte'
+  import type { DocumentMap, DocumentStatus } from '$shared/types'
 
-  let currentDocuments: DocumentRecordMap = {}
-  let documentLoaded: DocumentLoadStatus = {}
+  let currentDocuments: DocumentMap = {}
+  let documentContent: DocumentStatus = {}
   let activeDocumentId: string
   let documentRenderList: RenderListType[] = []
   let deletedDocumentList: RenderListType[] = []
 
   function newDocument(): void {
     const id = nanoid()
-    documentLoaded[id] = true
-    currentDocuments[id] = emptyDocumentRecord()
+    documentContent[id] = { loaded: true, content: '' }
+    currentDocuments[id] = emptyDocumentRecord(id)
     activeDocumentId = id
   }
 
-  $: {
-    documentRenderList = Object.keys(currentDocuments)
-      .filter((i) => !currentDocuments[i].meta.deleted_status)
-      .map((i) => {
-        return { id: i, title: currentDocuments[i].meta.title }
-      })
-  }
+  $: console.log(currentDocuments)
 
   $: {
-    deletedDocumentList = Object.keys(currentDocuments)
-      .filter((i) => currentDocuments[i].meta.deleted_status)
-      .map((i) => {
-        return { id: i, title: currentDocuments[i].meta.title }
-      })
-  }
-
-  async function moveDocumentToBin(id: string): Promise<void> {
-    try {
-      const response = await fetch(baseUrl + endpoints.deleteDocument + '/' + id, {
-        method: 'DELETE',
-        headers: {
-          cors: 'no-cors'
-        }
-      })
-      if (response.ok) {
-        const updatedDocuments = currentDocuments
-        delete updatedDocuments[id]
-        currentDocuments = updatedDocuments
-        const updatedDocumentLoaded = documentLoaded
-        delete updatedDocumentLoaded[id]
-        documentLoaded = updatedDocumentLoaded
-        if (activeDocumentId == id) {
-          activeDocumentId = ''
-        }
-      } else if (!response.ok && response.status === 503) {
-        await new Promise((resolve) => setTimeout(resolve, 2000))
-        moveDocumentToBin(id)
-      } else {
-        throw new Error(`Server is down with status ${response.status}`)
-      }
-    } catch (error) {
-      console.log('Error:', error)
-    }
-  }
-
-  async function fetchDocuments(): Promise<void> {
-    try {
-      const response = await fetch(baseUrl + endpoints.getByField + '/metadatas', {
-        method: 'GET',
-        headers: {
-          cors: 'no-cors'
-        }
-      })
-      if (response.ok) {
-        const data: DocumentFetchType = await response.json()
-        for (let i = 0; i < data.ids.length; i++) {
-          currentDocuments[data.ids[i]] = emptyDocumentRecord()
-          currentDocuments[data.ids[i]].meta = data.metadatas[i]
-          documentLoaded[data.ids[i]] = false
-        }
-      } else if (!response.ok && response.status === 503) {
-        await new Promise((resolve) => setTimeout(resolve, 2000))
-        fetchDocuments()
-      } else {
-        throw new Error(`Server is down with status ${response.status}`)
-      }
-    } catch (error) {
-      console.log('Error:', error)
-    }
-  }
-
-  onMount(() => {
-    fetchDocuments()
-    window.electron.ipcRenderer.on('before-quit', async () => {
-      console.log('before-quit')
-      await fetch(baseUrl + commands.quit, {
-        method: 'GET',
-        headers: {
-          cors: 'no-cors'
-        }
-      })
+    documentRenderList = Object.keys(currentDocuments).map((i) => {
+      return { id: i, title: currentDocuments[i].title }
     })
+  }
+
+  //$: {
+  //  deletedDocumentList = Object.keys(currentDocuments).map((i) => {
+  //    return { id: i, title: currentDocuments[i].title }
+  //  })
+  //}
+
+  function minimizeWindow(): void {
+    window.api.minimizeWindow()
+  }
+  function maximizeWindow(): void {
+    window.api.maximizeWindow()
+  }
+  function closeWindow(): void {
+    window.api.closeWindow()
+  }
+
+  onMount(async () => {
+    console.log(await window.api.serverStatus())
+    window.api.fetchDocuments().then((data) => {
+      console.log(data)
+      for (const document of data) {
+        currentDocuments[document.id] = document
+        documentContent[document.id] = { loaded: false }
+      }
+    })
+    // fetchDocuments()
+    //window.electron.ipcRenderer.send('embedding-server', { command: 'start' })
+    //window.electron.ipcRenderer.on('status', (event, arg) => {
+    //console.log(event, arg)
+    // console.log(window.electron.ipcRenderer.sendSync('db'))
   })
 </script>
 
 <!-- <svelte:window on:keydown={(e) => console.log(e)} /> -->
 <ModeWatcher />
+<nav class="h-10 w-full flex flex-row items-center">
+  <div class="titlebar w-full h-full flex items-center">
+    <Label class="ml-4">Semantic</Label>
+  </div>
+  <div class="traffic-lights h-full ml-auto flex">
+    <Button variant="secondary" class="bg-background h-full" on:click={minimizeWindow}
+      ><Minimize2 color="white" /></Button
+    >
+    <Button variant="secondary" class="bg-background h-full" on:click={maximizeWindow}
+      ><Square color="white" /></Button
+    >
+    <Button variant="secondary" class="bg-background h-full" on:click={closeWindow}
+      ><X color="white" /></Button
+    >
+  </div>
+</nav>
+<Navbar bind:activeDocumentId />
 <main class="h-full w-full flex flex-col">
   <Separator />
   <Resizable.PaneGroup direction="horizontal">
@@ -151,7 +125,10 @@
               size="sm"
               variant="ghost"
               on:click={() => {
-                moveDocumentToBin(doc['id'])
+                window.api.deleteDocument(doc['id'])
+                let oldDoc = currentDocuments
+                delete oldDoc[doc['id']]
+                currentDocuments = oldDoc
               }}><Trash2 size={18} /></Button
             >
           </div>
@@ -164,7 +141,7 @@
       {#if !activeDocumentId}
         <DocumentList />
       {:else}
-        <MyEditor bind:currentDocuments bind:documentLoaded bind:activeDocumentId />
+        <MyEditor bind:currentDocuments bind:documentContent bind:activeDocumentId />
         <!-- <TipTap bind:currentDocuments bind:documentLoaded bind:activeDocumentId /> -->
       {/if}
     </Resizable.Pane>
@@ -206,8 +183,5 @@
     </div></Resizable.Pane
   > -->
   </Resizable.PaneGroup>
-  <Separator />
-  <div class="status-bar px-5"><Label class="text-muted-foreground">Status</Label></div>
 </main>
 <!-- Keeping the Navbar below main content keeps the content of search results over main content -->
-<Navbar />

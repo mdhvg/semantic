@@ -1,3 +1,5 @@
+import type { FetchDocument, MetadataSchema } from '$shared/types'
+
 export type DocumentRecordMap = {
   [key: string]: DocumentRecord
 }
@@ -19,13 +21,13 @@ export type DocumentRecord = {
   plainText: string
 }
 
-export function emptyDocumentRecord(): DocumentRecord {
+export function emptyDocumentRecord(id: string): Partial<ReturnType<FetchDocument>> {
   return {
-    meta: {
-      title: '',
-      mime: 'text/markdown'
-    },
-    plainText: ''
+    id: id,
+    title: '',
+    mime: 'text/plain',
+    deleted: false,
+    deletedTimeLeft: 0
   }
 }
 
@@ -44,9 +46,6 @@ export type DocumentFetchType = {
     deleted_timeLeft?: number
   }[]
   uris: string[]
-}
-export type DocumentLoadStatus = {
-  [key: string]: boolean
 }
 
 export type RenderListType = {
