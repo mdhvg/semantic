@@ -1,37 +1,29 @@
 {
-  "extends": "@electron-toolkit/tsconfig/tsconfig.json",
-  "include": [
-    "src/renderer/src/env.d.ts",
-    "src/renderer/src/**/*",
-    "src/renderer/src/**/*.svelte",
-    "src/preload/*.d.ts",
-    "src/shared/**/*",
-  ],
-  "compilerOptions": {
-    "verbatimModuleSyntax": true,
-    "useDefineForClassFields": true,
-    "strict": false,
-    "allowJs": true,
-    "checkJs": true,
-    "noUnusedLocals": false,
-    "lib": [
-      "ESNext",
-      "DOM",
-      "DOM.Iterable"
-    ],
-    "baseUrl": ".",
-    "paths": {
-      "$lib/*": [
-        "src/renderer/src/lib"
-      ],
-      "$shared/*": [
-        "src/shared/*"
-      ]
-    }
-  },
-  "references": [
-    {
-      "path": "./tsconfig.node.json"
-    }
-  ]
+	"files": [],
+	"include": [
+		"src/renderer/src/env.d.ts",
+		"src/renderer/src/**/*",
+		"src/renderer/src/**/*.svelte",
+		"src/preload/*.d.ts",
+		"src/shared/**/*",
+	],
+	"references": [
+		{
+			"path": "./tsconfig.node.json"
+		},
+		{
+			"path": "./tsconfig.web.json"
+		}
+	],
+	"compilerOptions": {
+		"baseUrl": ".",
+		"paths": {
+			"$shared/*": [
+				"src/shared/*"
+			],
+			"@/*": [
+				"src/renderer/src/*"
+			]
+		}
+	}
 }
