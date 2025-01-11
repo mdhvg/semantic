@@ -1,8 +1,8 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
-import { join, resolve } from 'path'
+import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { ServerConnector } from './ServerConnector'
-import { config, splitContent } from './utils'
+import { config, splitContent } from '$shared/utils'
 import {
 	ServerStatus,
 	ServerRequest,
@@ -11,9 +11,9 @@ import {
 	DocumentContentSchema
 } from '$shared/types'
 import { setupPythonServer, startEmbeddingServer } from './Backend'
-import { Delay } from './utils'
+import { Delay } from '../shared/utils'
 import { db } from './Connector'
-import { BatchMatches, Index, MetricKind } from 'usearch'
+import { Index, MetricKind } from 'usearch'
 import { existsSync } from 'fs'
 import type { ResultType, SearchDocument } from '$shared/types'
 
@@ -21,20 +21,6 @@ let mainWindow: BrowserWindow
 let serverConnector: ServerConnector
 let index: Index
 const requestQ: ServerRequest[] = []
-
-// let metadb: lancedb.Connection
-// const schema = new arrow.Schema([
-// 	new arrow.Field('id', new arrow.Utf8(), false),
-// 	new arrow.Field('title', new arrow.Utf8(), true),
-// 	new arrow.Field('mime', new arrow.Utf8(), true),
-// 	new arrow.Field('deleted', new arrow.Bool(), false),
-// 	new arrow.Field('deletedTimeLeft', new arrow.Int32(), false),
-// 	new arrow.Field(
-// 		'vector',
-// 		new arrow.FixedSizeList(768, new arrow.Field('item', new arrow.Float32(), true))
-// 	)
-// ])
-// let table: lancedb.Table
 
 function createWindow(): void {
 	// Create the browser window.
@@ -62,9 +48,9 @@ function createWindow(): void {
 	})
 
 	mainWindow.on('show', () => {
-		setupPythonServer(is.dev).then((value: boolean) => {
-			startEmbeddingServer(value)
-		})
+		// setupPythonServer(is.dev).then((value: boolean) => {
+		// 	startEmbeddingServer(value)
+		// })
 		serverConnector.connect(config.serverAddress.port, config.serverAddress.host).then(() => {
 			console.log('Connected to server')
 		})
@@ -130,7 +116,7 @@ app.whenReady().then(async () => {
 			mainWindow.maximize()
 		}
 	})
-	ipcMain.handle('server-status', getDBStatus)
+	// ipcMain.handle('server-status', getDBStatus)
 	ipcMain.handle('fetch-documents', fetchDocuments)
 	ipcMain.handle('get-document', (_, id: number) => getDocument(id))
 	ipcMain.handle('save-document', (_, documentData: DocumentSchema, content: string) => {
@@ -251,8 +237,8 @@ async function fetchDocuments(): Promise<DocumentSchema[]> {
 	})
 }
 
-function getDocument(id: number): Promise<string> {
-	return new Promise<string>((resolve, reject) => {
+function getDocument(id: number): Promise<DocumentContentSchema[]> {
+	return new Promise<DocumentContentSchema[]>((resolve, reject) => {
 		db.all<DocumentContentSchema>(
 			`SELECT * FROM DocumentContent
 			WHERE document_id = ?
@@ -263,9 +249,7 @@ function getDocument(id: number): Promise<string> {
 					console.log(err)
 					reject(err)
 				} else {
-					const content = rows.map((row) => row.content).join(' ')
-					console.log(`Sending ${content} for document ${id}`)
-					resolve(content)
+					resolve(rows)
 				}
 			}
 		)
@@ -303,21 +287,33 @@ function saveDocument(documentData: DocumentSchema, content: string): void {
 				}
 			}
 		)
-		const stmt = db.prepare(
+		const saveStatemenet = db.prepare(
 			`INSERT INTO DocumentContent (document_id, sequence_number, content)
 			VALUES (?, ?, ?)`
 		)
+		const contentIDStatement = db.prepare(
+			`SELECT seq
+			FROM sqlite_sequence
+			WHERE name = 'DocumentContent'`
+		)
 		for (let i = 0; i < partitions.length; i++) {
-			stmt.run([documentData.document_id, i, partitions[i]])
+			console.log(`Partition ${i}: ${partitions[i]}`)
+			saveStatemenet.run([documentData.document_id, i, partitions[i]])
+			contentIDStatement.get<{ seq: number }>((err, row) => {
+				if (row) {
+					newRequest({
+						id: row.seq,
+						content: partitions[i],
+						size: partitions[i].length,
+						isQuery: false
+					})
+				} else {
+					console.log(err)
+				}
+			})
 		}
-		stmt.finalize()
+		saveStatemenet.finalize()
 		db.run('END TRANSACTION')
-	})
-	newRequest({
-		id: documentData.document_id,
-		size: content.length,
-		isQuery: false,
-		content: content
 	})
 }
 

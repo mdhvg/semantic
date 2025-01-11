@@ -1,99 +1,173 @@
 'use client'
 
-import { ActiveDocumentContentAtom, ActiveDocumentIDAtom, DocumentContentsAtom } from '@/store'
+import { cn } from '@/lib/utils'
 import {
-	BoldItalicUnderlineToggles,
-	diffSourcePlugin,
-	DiffSourceToggleWrapper,
-	directivesPlugin,
-	headingsPlugin,
-	imagePlugin,
-	KitchenSinkToolbar,
-	linkPlugin,
-	listsPlugin,
-	markdownShortcutPlugin,
-	MDXEditor,
-	MDXEditorMethods,
-	quotePlugin,
-	toolbarPlugin,
-	UndoRedo
-} from '@mdxeditor/editor'
+	ActiveDocumentContentAtom,
+	ActiveDocumentIDAtom,
+	DocumentContentsAtom,
+	ViewAtom
+} from '@/store'
 import { useAtom, useAtomValue } from 'jotai'
-import { gfmFromMarkdown, gfmToMarkdown } from 'mdast-util-gfm'
-import { useEffect, useRef } from 'react'
+import React, { Fragment, createElement, useEffect, useRef, useState } from 'react'
+import { unified } from 'unified'
+import remarkParse from 'remark-parse'
+import rehypeReact from 'rehype-react'
+import remarkGfm from 'remark-gfm'
+import remarkRehype from 'remark-rehype'
+import rehypeRaw from 'rehype-raw'
+import * as Runtime from 'react/jsx-runtime'
+import { View } from '$shared/types'
+
+const createMarkdown = (input: string): React.ReactNode => {
+	return unified()
+		.use(remarkParse)
+		.use(remarkGfm)
+		.use(remarkRehype, { allowDangerousHtml: true })
+		.use(rehypeRaw)
+		.use(rehypeReact, { Fragment: Runtime.Fragment, jsx: Runtime.jsx, jsxs: Runtime.jsxs })
+		.processSync(input).result
+}
 
 export const MarkdownEditor = (): React.ReactElement => {
 	const [content, setContent] = useAtom(ActiveDocumentContentAtom)
-	const editorRef = useRef<MDXEditorMethods>(null)
 	const activeDocument = useAtomValue(ActiveDocumentIDAtom)
 	const documentContents = useAtomValue(DocumentContentsAtom)
+	const view = useAtomValue<View>(ViewAtom)
+	const textAreaRef = useRef<HTMLTextAreaElement>(null)
+	const [preview, setPreview] = useState<React.ReactNode[]>([createElement(Fragment)])
 
-	const processContent = (content: string): string => {}
+	const createEditorAndPreview = (): void => {
+		if (activeDocument === null) return
+		if (documentContents[activeDocument] === undefined) return
+		switch (view) {
+			case View.EDIT:
+				{
+					if (textAreaRef.current !== null) {
+						textAreaRef.current.value = content.contentString
+					}
+				}
+				break
+			case View.PREVIEW:
+				{
+					const previewArray: React.ReactNode[] = []
+					if (!content.dirty) {
+						for (const part of content.content) {
+							previewArray.push(
+								<span
+									className={cn(
+										'hidden',
+										`content--${part.content_id}`,
+										`document--${activeDocument}`,
+										'w-0',
+										'h-0'
+									)}
+								></span>
+							)
+							previewArray.push(createMarkdown(part.content))
+						}
+					} else {
+						previewArray.push(createMarkdown(content.contentString))
+					}
+					setPreview(previewArray)
+				}
+				break
+			case View.SPLIT:
+				{
+					if (textAreaRef.current !== null) {
+						textAreaRef.current.value = content.contentString
+					}
+					const previewArray: React.ReactNode[] = []
+					if (!content.dirty) {
+						for (const part of content.content) {
+							previewArray.push(
+								<span
+									className={cn(
+										'hidden',
+										`content--${part.content_id}`,
+										`document--${activeDocument}`,
+										'w-0',
+										'h-0'
+									)}
+								></span>
+							)
+							previewArray.push(createMarkdown(part.content))
+						}
+					} else {
+						previewArray.push(createMarkdown(content.contentString))
+					}
+					setPreview(previewArray)
+				}
+				break
+			default:
+				break
+		}
+	}
+
+	useEffect(createEditorAndPreview, [view, content])
 
 	useEffect(() => {
-		console.log('fetching document content')
-		activeDocument !== null &&
-			(documentContents[activeDocument] === undefined
-				? window.api.getDocument(activeDocument).then((fetchedContent) => {
-						console.log(documentContents)
-						setContent(fetchedContent)
-						editorRef.current?.setMarkdown(fetchedContent.length ? fetchedContent : '')
-					})
-				: editorRef.current?.setMarkdown(documentContents[activeDocument]))
+		if (activeDocument !== null) {
+			if (documentContents[activeDocument] === undefined) {
+				window.api.getDocument(activeDocument).then((fetchedContent) => {
+					console.log(fetchedContent)
+					setContent(fetchedContent)
+				})
+			} else {
+				setContent(documentContents[activeDocument].contentString)
+			}
+		}
 	}, [activeDocument])
 
 	return (
-		<MDXEditor
-			ref={editorRef}
-			markdown={content}
-			toMarkdownOptions={{ extensions: [] }}
-			plugins={[
-				headingsPlugin(),
-				listsPlugin(),
-				quotePlugin(),
-				markdownShortcutPlugin(),
-				imagePlugin({
-					imagePreviewHandler(imageSource) {
-						return new Promise((resolve, reject) => {
-							const reader = new FileReader()
-							reader.onload = (): void => {
-								if (reader.result !== null) {
-									resolve(reader.result as string)
-								} else {
-									reject(new Error('Failed to read file'))
-								}
-							}
-							reader.onerror = reject
-							reader.readAsDataURL(new Blob([imageSource]))
-						})
-					},
-					imageUploadHandler(image) {
-						return new Promise((resolve, reject) => {
-							const reader = new FileReader()
-							reader.onload = (): void => {
-								if (reader.result !== null) {
-									resolve(reader.result as string)
-								} else {
-									reject(new Error('Failed to read file'))
-								}
-							}
-							reader.onerror = reject
-							reader.readAsDataURL(new Blob([image]))
-						})
-					}
-				}),
-				directivesPlugin(),
-				linkPlugin(),
-				diffSourcePlugin()
-				// toolbarPlugin({
-				// toolbarClassName: 'flex justify-between items-center w-10 h-10'
-				// toolbarContents: (): React.ReactElement => {
-				// 	return <KitchenSinkToolbar />
-				// }
-				// })
-			]}
-			onChange={(newContent) => setContent(newContent)}
-			contentEditableClassName="outline-none min-h-screen max-w-none prose-sm pt-2"
-		/>
+		<div
+			className={cn(
+				view === View.SPLIT ? 'grid' : 'flex',
+				view === View.SPLIT ? 'grid-cols-2' : 'flex-col',
+				'flex-1',
+				'overflow-auto',
+				'w-full',
+				'h-full',
+				'overflow-hidden'
+			)}
+		>
+			{view !== View.PREVIEW && (
+				<textarea
+					autoFocus
+					className={cn(
+						view === View.SPLIT && 'w-1/2',
+						view === View.EDIT && 'w-full',
+						'outline-none',
+						'w-full',
+						'grow',
+						'ring-0',
+						'text-foreground',
+						'bg-background',
+						'resize-none',
+						'overflow-y-scroll',
+						'p-2'
+					)}
+					onChange={(e) => setContent(e.target.value)}
+					ref={textAreaRef}
+				/>
+			)}
+			{view !== View.EDIT && (
+				<div
+					className={cn(
+						view === View.PREVIEW && 'min-w-full',
+						'prose',
+						'dark:prose-invert',
+						'p-2',
+						'text-pretty',
+						'break-words',
+						'grow',
+						'overflow-y-scroll'
+					)}
+				>
+					{preview.map((element, index) => (
+						<Fragment key={index}>{element}</Fragment>
+					))}
+				</div>
+			)}
+		</div>
 	)
 }

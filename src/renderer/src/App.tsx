@@ -1,13 +1,14 @@
 import { AppSidebar } from '@/components/app-sidebar'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 import { MarkdownEditor } from '@/components/Editor'
-import { NoteTitle } from '@/components/NoteTitle'
+import { DocumentTitle } from '@/components/Document-Title'
 import { useAtomValue } from 'jotai'
 import { ActiveDocumentAtom, ActiveDocumentContentAtom } from './store'
 import { Separator } from '@/components/ui/separator'
 import { Button } from './components/ui/button'
 import { Save, Trash2 } from 'lucide-react'
 import { ThemeProvider } from './components/theme-provider'
+import { EditorToolbar } from './components/Editor-Toolbar'
 
 export default function App(): React.ReactElement {
 	const document = useAtomValue(ActiveDocumentAtom)
@@ -25,7 +26,7 @@ export default function App(): React.ReactElement {
 		<ThemeProvider>
 			<SidebarProvider>
 				<AppSidebar side="left" />
-				<SidebarInset>
+				<SidebarInset className="h-screen relative flex flex-col">
 					<header className="flex gap-2 items-center p-2">
 						<div className="flex p-2 gap-2 w-full items-center">
 							<SidebarTrigger />
@@ -49,13 +50,15 @@ export default function App(): React.ReactElement {
 						</div>
 					</main>
 				)} */}
-					<div className="px-20 h-full">
-						<NoteTitle />
+					<div className="main-inset flex flex-col flex-1 overflow-hidden px-20">
+						<DocumentTitle />
 						<Separator orientation="horizontal" />
+						<EditorToolbar />
 						<MarkdownEditor />
 					</div>
 				</SidebarInset>
 			</SidebarProvider>
+			{/* <div className="flex w-full h-6">Status</div> */}
 		</ThemeProvider>
 	)
 }

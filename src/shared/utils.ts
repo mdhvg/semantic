@@ -32,10 +32,21 @@ export const Delay = (ms: number): Promise<void> =>
 export const config = configReader()
 
 export const splitContent = (content: string, wordsPerChunk: number): string[] => {
-	const words = content.split(' ')
+	let wordsAdded = 0
+	let start = 0
 	const chunks: string[] = []
-	for (let i = 0; i < words.length; i += wordsPerChunk) {
-		chunks.push(words.slice(i, i + wordsPerChunk).join(' '))
+	for (let i = 0; i < content.length; i++) {
+		if (content[i] === ' ') {
+			wordsAdded++
+		}
+		if (wordsAdded === wordsPerChunk) {
+			chunks.push(content.slice(start, i))
+			start = i
+			wordsAdded = 0
+		}
+	}
+	if (start < content.length) {
+		chunks.push(content.slice(start))
 	}
 	return chunks
 }

@@ -7,4 +7,5 @@ out
 # Ignore database and index files
 *.sqlite
 *.sqlite-journal
+*.db
 *.usearch

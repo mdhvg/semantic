@@ -63,3 +63,15 @@ export type SearchDocument = {
 
 export type ResultType = Partial<DocumentSchema> &
 	Pick<DocumentSchema, 'document_id' | 'title' | 'mime'> & { distance: number }
+
+export enum View {
+	PREVIEW = 'PREVIEW',
+	EDIT = 'EDIT',
+	SPLIT = 'SPLIT'
+}
+
+export type ContentSchemanAndString = {
+	content: DocumentContentSchema[]
+	contentString: string
+	dirty: boolean
+}

@@ -7,7 +7,7 @@
 		"joinHomeDir": true,
 		"path": ["Semantic", "plaintext"]
 	},
-	"dbFile": "./documents.db",
+	"dbFile": "./documents.sqlite",
 	"indexFile": "./index.usearch",
 
 	"serverDir": "server",

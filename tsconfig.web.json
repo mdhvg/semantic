@@ -7,6 +7,7 @@
 		"src/preload/*.d.ts"
 	],
 	"compilerOptions": {
+		"esModuleInterop": true,
 		"composite": true,
 		"jsx": "react-jsx",
 		"baseUrl": ".",
