@@ -1,7 +1,14 @@
 import React from 'react'
-import { SearchDocument } from '$shared/types'
+import { DocumentSchema, SearchDocument, View } from '$shared/types'
 import { useAtom, useAtomValue } from 'jotai'
-import { CommandAtom, SearchResultsAtom } from '@/store'
+import {
+	ActiveDocumentIDAtom,
+	CommandAtom,
+	DocumentsAtom,
+	FocusAtom,
+	SearchResultsAtom,
+	ViewAtom
+} from '@/store'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
 	Command,
@@ -15,6 +22,10 @@ import {
 export function SidebarSearch(): React.ReactElement {
 	const [open, setOpen] = useAtom<boolean>(CommandAtom)
 	const searchResults = useAtomValue<SearchDocument['documents']>(SearchResultsAtom)
+	const documents = useAtomValue<DocumentSchema[]>(DocumentsAtom)
+	const [, setActiveDocumentID] = useAtom<number | null>(ActiveDocumentIDAtom)
+	const [, setFocus] = useAtom<number | null>(FocusAtom)
+	const [, setView] = useAtom<View>(ViewAtom)
 
 	const debounce = (func: (query: string) => void, wait: number) => {
 		let timeout: NodeJS.Timeout
@@ -30,6 +41,14 @@ export function SidebarSearch(): React.ReactElement {
 		window.api.searchDocument(value)
 	}, 1000)
 
+	const openAndFocusContent = (content_id: number, document_id: number): void => {
+		console.log('Opening and focusing content', content_id, document_id)
+		setOpen(false)
+		setView(View.PREVIEW)
+		setActiveDocumentID(document_id)
+		setFocus(content_id)
+	}
+
 	return (
 		<Popover open={open} onOpenChange={setOpen}>
 			<PopoverTrigger className="absolute left-[50vw]"></PopoverTrigger>
@@ -42,8 +61,20 @@ export function SidebarSearch(): React.ReactElement {
 						) : (
 							<CommandGroup heading="Semantic Search">
 								{searchResults.map((result) => (
-									<CommandItem key={result.document_id} className="flex items-center">
-										<span>{result.title}</span>
+									<CommandItem
+										key={result.content_id}
+										className="flex items-center"
+										onClick={() => {
+											openAndFocusContent(result.content_id, result.document_id)
+										}}
+										onSelect={() => {
+											openAndFocusContent(result.content_id, result.document_id)
+										}}
+									>
+										<span>
+											{documents.find((doc) => doc.document_id === result.document_id)?.title}
+										</span>
+										<span className="text-muted-foreground">{`index: ${result.sequence_number}`}</span>
 										<span className="ml-auto text-muted-foreground">
 											{(result.distance * 100).toFixed(2)}% Match
 										</span>

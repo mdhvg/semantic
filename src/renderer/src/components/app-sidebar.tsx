@@ -16,6 +16,7 @@ import type { SearchDocument, DocumentSchema } from '$shared/types'
 import { useAtom } from 'jotai'
 import { CommandAtom, DocumentsAtom, SearchResultsAtom } from '@/store'
 import { SidebarSearch } from './Sidebar-Search'
+import { defaultDocument } from '@/lib/utils'
 
 // This is sample data.
 const data = {
@@ -31,16 +32,6 @@ const data = {
 			icon: Trash2
 		}
 	]
-}
-
-function defaultDocument(id: number): DocumentSchema {
-	return {
-		document_id: id,
-		title: 'Dummy Document',
-		mime: 'text/plain',
-		deleted: false,
-		deleted_time_left: 0
-	}
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): React.ReactElement {
@@ -60,6 +51,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
 
 	React.useEffect(() => {
 		window.api.onSearchResult((result) => {
+			console.log('search results', result)
 			setSearchResults(result.documents)
 		})
 

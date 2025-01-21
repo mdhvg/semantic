@@ -5,6 +5,7 @@ import {
 	ActiveDocumentContentAtom,
 	ActiveDocumentIDAtom,
 	DocumentContentsAtom,
+	FocusAtom,
 	ViewAtom
 } from '@/store'
 import { useAtom, useAtomValue } from 'jotai'
@@ -34,7 +35,9 @@ export const MarkdownEditor = (): React.ReactElement => {
 	const documentContents = useAtomValue(DocumentContentsAtom)
 	const view = useAtomValue<View>(ViewAtom)
 	const textAreaRef = useRef<HTMLTextAreaElement>(null)
+	const [focus, setFocus] = useAtom<number | null>(FocusAtom)
 	const [preview, setPreview] = useState<React.ReactNode[]>([createElement(Fragment)])
+	const previewRef = useRef<HTMLDivElement>(null)
 
 	const createEditorAndPreview = (): void => {
 		if (activeDocument === null) return
@@ -55,7 +58,7 @@ export const MarkdownEditor = (): React.ReactElement => {
 							previewArray.push(
 								<span
 									className={cn(
-										'hidden',
+										'invisible',
 										`content--${part.content_id}`,
 										`document--${activeDocument}`,
 										'w-0',
@@ -116,6 +119,22 @@ export const MarkdownEditor = (): React.ReactElement => {
 				setContent(documentContents[activeDocument].contentString)
 			}
 		}
+
+		setTimeout(() => {
+			if (focus !== null) {
+				const element = previewRef.current?.querySelector(`.content--${focus}`)
+				element?.scrollIntoView()
+				console.log(element)
+				if (element) {
+					const nextElement = element.nextElementSibling
+					console.log(nextElement)
+					if (nextElement !== null) {
+						nextElement.scrollIntoView()
+					}
+				}
+				setFocus(null)
+			}
+		}, 2000)
 	}, [activeDocument])
 
 	return (
@@ -162,6 +181,7 @@ export const MarkdownEditor = (): React.ReactElement => {
 						'grow',
 						'overflow-y-scroll'
 					)}
+					ref={previewRef}
 				>
 					{preview.map((element, index) => (
 						<Fragment key={index}>{element}</Fragment>

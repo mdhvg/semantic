@@ -23,6 +23,11 @@
 		"port": 5096
 	},
 
+	"socketServer": {
+		"host": "127.0.0.1",
+		"port": 5097
+	},
+
 	"maxMessageLen": 4096,
 
 	"win32": {

@@ -2,25 +2,21 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { ServerConnector } from './ServerConnector'
-import { config, splitContent } from '$shared/utils'
-import {
-	ServerStatus,
-	ServerRequest,
-	ServerResponse,
-	DocumentSchema,
-	DocumentContentSchema
-} from '$shared/types'
-import { setupPythonServer, startEmbeddingServer } from './Backend'
-import { Delay } from '../shared/utils'
+import { config, splitContent } from './utils'
+import { ServerResponse, DocumentSchema, DocumentContentSchema } from '$shared/types'
+// import { setupPythonServer, startEmbeddingServer } from './Backend'
+import { Delay } from './utils'
 import { db } from './Connector'
 import { Index, MetricKind } from 'usearch'
 import { existsSync } from 'fs'
-import type { ResultType, SearchDocument } from '$shared/types'
+import type { ResultType, SearchDocument, ServerMessage } from '$shared/types'
+import WebSocket, { WebSocketServer } from 'ws'
 
 let mainWindow: BrowserWindow
 let serverConnector: ServerConnector
 let index: Index
-const requestQ: ServerRequest[] = []
+let wss: WebSocketServer
+const requestQ: ServerMessage[] = []
 
 function createWindow(): void {
 	// Create the browser window.
@@ -34,7 +30,7 @@ function createWindow(): void {
 		frame: true,
 		autoHideMenuBar: true,
 		webPreferences: {
-			preload: join(__dirname, '../preload/index.js'),
+			preload: join(__dirname, '../preload/index.mjs'),
 			sandbox: false,
 			devTools: is.dev
 		}
@@ -54,10 +50,33 @@ function createWindow(): void {
 		serverConnector.connect(config.serverAddress.port, config.serverAddress.host).then(() => {
 			console.log('Connected to server')
 		})
+
+		wss = new WebSocketServer({
+			host: config.socketServer.host,
+			port: config.socketServer.port
+		})
+
+		wss.on('connection', (ws: WebSocket) => {
+			ws.on('message', async (message: string) => {
+				const data = JSON.parse(message)
+				console.log(data)
+				const newId = await createNewDocument()
+				saveDocument(
+					{
+						document_id: newId,
+						title: data.title,
+						mime: 'text/html',
+						deleted: false,
+						deleted_time_left: 0
+					},
+					data.content
+				)
+			})
+		})
 	})
 
 	mainWindow.on('close', () => {
-		serverConnector.connected && serverConnector.sendCommand('Quit')
+		serverConnector.connected && serverConnector.sendMessage({ kind: 'COMMAND', command: 'close' })
 		index.save(config.indexFile)
 		mainWindow.destroy()
 	})
@@ -103,6 +122,7 @@ app.whenReady().then(async () => {
 	//   }
 
 	// startStatusNotifier()
+
 	ipcMain.handle('close-window', () => {
 		app.quit()
 	})
@@ -130,7 +150,7 @@ app.whenReady().then(async () => {
 	})
 	ipcMain.handle('search-document', (_, term: string) => {
 		console.log('Searching for:', term)
-		newRequest({ id: 0, isQuery: true, content: term, size: term.length })
+		newRequest({ kind: 'QUERY', data: term })
 	})
 
 	createWindow()
@@ -158,7 +178,8 @@ app.whenReady().then(async () => {
 		if (BrowserWindow.getAllWindows().length === 0) createWindow()
 	})
 
-	// TODO: Implement the startEmbeddingServer which will pull the server from repository, setup the environment and start the server. And only start the server for all the subsequent runs.
+	// TODO: Implement the startEmbeddingServer which will pull the server from repository,
+	// setup the environment and start the server. And only start the server for all the subsequent runs.
 	// startEmbeddingServer()
 	// connectToEmbeddingServer()
 
@@ -168,7 +189,7 @@ app.whenReady().then(async () => {
 			CREATE TABLE IF NOT EXISTS Documents (
 			document_id INTEGER PRIMARY KEY AUTOINCREMENT,
 			title TEXT DEFAULT '',
-			mime TEXT NOT NULL DEFAULT 'text/plain',
+			mime TEXT NOT NULL DEFAULT 'text/markdown',
 			deleted BOOLEAN NOT NULL DEFAULT 0,
 			deleted_time_left INTEGER DEFAULT 0
 			);
@@ -180,6 +201,8 @@ app.whenReady().then(async () => {
 			document_id INTEGER NOT NULL,
 			sequence_number INTEGER NOT NULL,
 			content TEXT NOT NULL DEFAULT '',
+			plain_text TEXT NOT NULL DEFAULT '',
+			UNIQUE (content_id, document_id, sequence_number),
 			FOREIGN KEY (document_id) REFERENCES Documents(document_id) ON DELETE CASCADE
 			);
 			`)
@@ -218,10 +241,10 @@ app.on('window-all-closed', () => {
 // 	}
 // }
 
-function getDBStatus(): ServerStatus {
-	return ServerStatus.RUNNING
-	//return ServerStatus[dbStatus ? 'RUNNING' : 'STOPPED']
-}
+// function getDBStatus(): ServerStatus {
+// 	return ServerStatus.RUNNING
+//	return ServerStatus[dbStatus ? 'RUNNING' : 'STOPPED']
+// }
 
 async function fetchDocuments(): Promise<DocumentSchema[]> {
 	return new Promise((resolve, reject) => {
@@ -256,64 +279,82 @@ function getDocument(id: number): Promise<DocumentContentSchema[]> {
 	})
 }
 
-function saveDocument(documentData: DocumentSchema, content: string): void {
-	const partitions = splitContent(content, 200) // TODO: Change this to fetch from model currently loaded
-	db.serialize(() => {
-		db.run('BEGIN TRANSACTION')
-		db.run(
-			`UPDATE Documents
+async function saveDocument(documentData: DocumentSchema, content: string): Promise<void> {
+	return new Promise<void>((resolve, reject) => {
+		const { mimeFormatChunks, plainTextChunks } = splitContent(content, 200, documentData.mime)
+		db.serialize(() => {
+			db.run('BEGIN TRANSACTION')
+			db.run(
+				`UPDATE Documents
 			SET title = ?, mime = ?, deleted = ?, deleted_time_left = ?
 			WHERE document_id = ?`,
-			[
-				documentData.title,
-				documentData.mime,
-				documentData.deleted,
-				documentData.deleted_time_left,
-				documentData.document_id
-			],
-			(err) => {
-				if (err) {
-					console.log(err)
+				[
+					documentData.title,
+					documentData.mime,
+					documentData.deleted,
+					documentData.deleted_time_left,
+					documentData.document_id
+				],
+				(err) => {
+					if (err) {
+						console.log(err)
+						reject(err)
+					}
 				}
-			}
-		)
-		db.run(
-			`DELETE FROM DocumentContent
+			)
+			db.all<{ content_id: number }>(
+				`SELECT content_id
+				FROM DocumentContent
+				WHERE document_id = ?`,
+				[documentData.document_id],
+				(err, rows) => {
+					if (err) {
+						console.log(err)
+						reject(err)
+					}
+					for (const row of rows) {
+						if (row) {
+							index.remove(BigInt(row.content_id))
+						}
+					}
+				}
+			)
+			db.run(
+				`DELETE FROM DocumentContent
 			WHERE document_id = ?`,
-			[documentData.document_id],
-			(err) => {
-				if (err) {
-					console.log(err)
+				[documentData.document_id],
+				(err) => {
+					if (err) {
+						console.log(err)
+						reject(err)
+					}
 				}
+			)
+			const saveStatemenet = db.prepare(
+				`INSERT INTO DocumentContent (document_id, sequence_number, content, plain_text)
+			VALUES (?, ?, ?, ?) RETURNING content_id`
+			)
+			for (let i = 0; i < plainTextChunks.length; i++) {
+				console.log(`Partition ${i}: ${plainTextChunks[i]}`)
+				saveStatemenet.get<{ content_id: number }>(
+					[documentData.document_id, i, mimeFormatChunks[i], plainTextChunks[i]],
+					(err, row) => {
+						if (row) {
+							console.log(
+								`Data: ${JSON.stringify({ kind: 'DATA', id: row.content_id, data: plainTextChunks[i] })}`
+							)
+							newRequest({ kind: 'DATA', id: row.content_id, data: plainTextChunks[i] })
+						} else {
+							console.log(err)
+							reject(err)
+						}
+					}
+				)
 			}
-		)
-		const saveStatemenet = db.prepare(
-			`INSERT INTO DocumentContent (document_id, sequence_number, content)
-			VALUES (?, ?, ?)`
-		)
-		const contentIDStatement = db.prepare(
-			`SELECT seq
-			FROM sqlite_sequence
-			WHERE name = 'DocumentContent'`
-		)
-		for (let i = 0; i < partitions.length; i++) {
-			console.log(`Partition ${i}: ${partitions[i]}`)
-			saveStatemenet.run([documentData.document_id, i, partitions[i]])
-			contentIDStatement.get<{ seq: number }>((err, row) => {
-				if (row) {
-					newRequest({
-						id: row.seq,
-						content: partitions[i],
-						size: partitions[i].length,
-						isQuery: false
-					})
-				} else {
-					console.log(err)
-				}
-			})
-		}
-		saveStatemenet.finalize()
-		db.run('END TRANSACTION')
+			saveStatemenet.finalize()
+			db.run('END TRANSACTION')
+		})
+		resolve()
 	})
 }
 
@@ -331,14 +372,6 @@ async function deleteDocument(id: number): Promise<void> {
 			}
 		)
 	})
-	// table.update({
-	// 	values: {
-	// 		deleted: true,
-	// 		deletedTimeLeft: 30
-	// 	},
-	// 	where: `id = ${id}`
-	// })
-	// console.log(`Document with id: ${id} will be deleted after 30 days`)
 }
 
 async function pollRequests(): Promise<void> {
@@ -348,22 +381,23 @@ async function pollRequests(): Promise<void> {
 		} else {
 			const request = requestQ.shift()
 			if (request) {
-				await serverConnector.sendData(request, request.isQuery)
+				await serverConnector.sendMessage(request)
 			}
 		}
 	}
 }
 
-function newRequest(request: ServerRequest): void {
+function newRequest(request: ServerMessage): void {
 	requestQ.push(request)
 	pollRequests()
 }
 
 async function createResult(key: number, distance: number): Promise<ResultType> {
 	return new Promise<ResultType>((resolve, reject) => {
-		db.get<Pick<DocumentSchema, 'document_id' | 'mime' | 'title'>>(
-			`SELECT document_id, title, mime
-			FROM Documents WHERE document_id=?`,
+		db.get<DocumentContentSchema>(
+			`SELECT * FROM
+			DocumentContent
+			WHERE content_id = ?`,
 			[key],
 			(err, row) => {
 				if (err) {

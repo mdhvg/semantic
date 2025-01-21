@@ -24,6 +24,7 @@ export type DocumentContentSchema = {
 	document_id: number
 	sequence_number: number
 	content: string
+	plain_text: string
 }
 
 export type DocumentMap = {
@@ -43,13 +44,6 @@ export type DocumentStatus =
 			}
 	  }
 
-export type ServerRequest = {
-	id: number
-	content: string
-	size: number
-	isQuery: boolean
-}
-
 export type ServerResponse = {
 	id: number
 	isQuery: boolean
@@ -61,8 +55,7 @@ export type SearchDocument = {
 	documents: ResultType[]
 }
 
-export type ResultType = Partial<DocumentSchema> &
-	Pick<DocumentSchema, 'document_id' | 'title' | 'mime'> & { distance: number }
+export type ResultType = DocumentContentSchema & { distance: number }
 
 export enum View {
 	PREVIEW = 'PREVIEW',
@@ -75,3 +68,19 @@ export type ContentSchemanAndString = {
 	contentString: string
 	dirty: boolean
 }
+
+export type ServerMessage =
+	| {
+			kind: 'DATA'
+			id: number
+			data: string
+	  }
+	| {
+			kind: 'COMMAND'
+			// TODO: Change the command to an enum instead of string
+			command: string
+	  }
+	| {
+			kind: 'QUERY'
+			data: string
+	  }
