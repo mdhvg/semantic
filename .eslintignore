@@ -2,3 +2,5 @@ node_modules
 dist
 out
 .gitignore
+server
+embedded_python

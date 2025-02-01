@@ -1,6 +1,6 @@
 import { ServerMessage, ServerResponse } from '$shared/types'
 import net from 'net'
-import { Delay } from './utils'
+import { Delay, log, logError } from './utils'
 
 export class ServerConnector {
 	private static instance: ServerConnector
@@ -55,7 +55,7 @@ export class ServerConnector {
 				reject(new Error('Connection closed'))
 			})
 			this.client.connect(port, host, () => {
-				console.log('Connected to server')
+				log('Connected to server')
 				this.heartbeat()
 				resolve()
 			})
@@ -85,8 +85,8 @@ export class ServerConnector {
 			try {
 				await this.attemptConnection(port, host)
 			} catch (error) {
-				console.error(`Failed to connect (attempt ${tries}): ${error}`)
-				console.log(`Retrying in ${timeout} ms...`)
+				logError(`Failed to connect (attempt ${tries}): ${error}`)
+				log(`Retrying in ${timeout} ms...`)
 			}
 			if (!this.connected) {
 				await new Promise((resolve) => setTimeout(resolve, timeout))
@@ -105,7 +105,7 @@ export class ServerConnector {
 				this.client.write(message)
 				resolve()
 			} else {
-				console.error('Client is not writable')
+				logError('Client is not writable')
 				this.connected = false
 				this.client.end()
 				reject()
@@ -117,7 +117,7 @@ export class ServerConnector {
 		try {
 			await this.write(JSON.stringify(message))
 		} catch (error) {
-			console.error('Failed to send message:', error)
+			logError('Failed to send message:', error)
 		}
 	}
 }

@@ -10,6 +10,7 @@ import remarkParse from 'remark-parse'
 import he from 'he'
 import { visit } from 'unist-util-visit'
 import { Literal, Node, Parent } from 'unist'
+import pico from 'picocolors'
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export function configReader() {
@@ -39,6 +40,14 @@ export const Delay = (ms: number): Promise<void> =>
 	new Promise((resolve) => setTimeout(resolve, ms))
 
 export const config = configReader()
+
+export const log = (...messages: unknown[]): void => {
+	console.log(pico.bold(pico.blue('Client')) + ':' + pico.greenBright('main') + ':', ...messages)
+}
+
+export const logError = (...messages: unknown[]): void => {
+	console.log(pico.bold(pico.blue('Client')) + ':' + pico.redBright('main') + ':', ...messages)
+}
 
 const addSpacesBetweenInlineNodes = () => {
 	return (tree: Node): void => {

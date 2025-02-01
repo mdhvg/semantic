@@ -1,4 +1,4 @@
-import { splitContent } from '../../../src/main/utils'
+import { log, splitContent } from '../../../src/main/utils'
 import { test, expect } from 'vitest'
 
 test('Tests the chunk creation algorithm on HTML', () => {
@@ -89,4 +89,9 @@ An optimal threshold matrix is one that for any possible quantisation of color h
 		]
 	})
 	expect(result.mimeFormatChunks.length === result.plainTextChunks.length).toBeTruthy()
+})
+
+test('Test chalk colorization', () => {
+	expect(log('This is a test')).toBeUndefined()
+	expect(log('This is', 'another', 'test')).toBeUndefined()
 })

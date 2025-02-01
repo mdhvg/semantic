@@ -5,12 +5,13 @@ import { ServerConnector } from './ServerConnector'
 import { config, splitContent } from './utils'
 import { ServerResponse, DocumentSchema, DocumentContentSchema } from '$shared/types'
 // import { setupPythonServer, startEmbeddingServer } from './Backend'
-import { Delay } from './utils'
+import { Delay, log } from './utils'
 import { db } from './Connector'
 import { Index, MetricKind } from 'usearch'
 import { existsSync } from 'fs'
 import type { ResultType, SearchDocument, ServerMessage } from '$shared/types'
 import WebSocket, { WebSocketServer } from 'ws'
+import { setupPythonServer, startEmbeddingServer } from './Backend'
 
 let mainWindow: BrowserWindow
 let serverConnector: ServerConnector
@@ -44,11 +45,15 @@ function createWindow(): void {
 	})
 
 	mainWindow.on('show', () => {
-		// setupPythonServer(is.dev).then((value: boolean) => {
-		// 	startEmbeddingServer(value)
-		// })
-		serverConnector.connect(config.serverAddress.port, config.serverAddress.host).then(() => {
-			console.log('Connected to server')
+		setupPythonServer(!is.dev).then(async (value: boolean) => {
+			if (value) {
+				if (!(await startEmbeddingServer())) {
+					throw new Error('Failed to start the server')
+				}
+				serverConnector.connect(config.serverAddress.port, config.serverAddress.host).then(() => {
+					log('Connected to server')
+				})
+			}
 		})
 
 		wss = new WebSocketServer({
@@ -59,7 +64,7 @@ function createWindow(): void {
 		wss.on('connection', (ws: WebSocket) => {
 			ws.on('message', async (message: string) => {
 				const data = JSON.parse(message)
-				console.log(data)
+				log(data)
 				const newId = await createNewDocument()
 				saveDocument(
 					{
@@ -89,7 +94,7 @@ function createWindow(): void {
 	// HMR for renderer base on electron-vite cli.
 	// Load the remote URL for development or the local html file for production.
 	if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-		console.log(process.env['ELECTRON_RENDERER_URL'])
+		log(process.env['ELECTRON_RENDERER_URL'])
 		mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
 	} else {
 		mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
@@ -111,7 +116,7 @@ app.whenReady().then(async () => {
 	})
 
 	// IPC test
-	// ipcMain.on('ping', () => console.log('pong'))
+	// ipcMain.on('ping', () => log('pong'))
 	//ipcMain.on('embedding-server', (_, args: ServerMessageData) => {
 	//serverConnector.send(args)
 	//})
@@ -149,7 +154,7 @@ app.whenReady().then(async () => {
 		return createNewDocument()
 	})
 	ipcMain.handle('search-document', (_, term: string) => {
-		console.log('Searching for:', term)
+		log('Searching for:', term)
 		newRequest({ kind: 'QUERY', data: term })
 	})
 
@@ -228,7 +233,7 @@ app.on('window-all-closed', () => {
 // code. You can also put them in separate files and require them here.
 
 // async function startStatusNotifier(): Promise<void> {
-// 	console.log('startStatusNotifier')
+// 	log('startStatusNotifier')
 // 	while (app)
 // 		while (!dbStatus) {
 // 			if (mainWindow) {
@@ -250,10 +255,10 @@ async function fetchDocuments(): Promise<DocumentSchema[]> {
 	return new Promise((resolve, reject) => {
 		db.all<DocumentSchema>('SELECT * FROM Documents', (err, rows) => {
 			if (err) {
-				console.log(err)
+				log(err)
 				reject(err)
 			} else {
-				console.log(rows)
+				log(rows)
 				resolve(rows)
 			}
 		})
@@ -269,7 +274,7 @@ function getDocument(id: number): Promise<DocumentContentSchema[]> {
 			[id],
 			(err, rows) => {
 				if (err) {
-					console.log(err)
+					log(err)
 					reject(err)
 				} else {
 					resolve(rows)
@@ -297,7 +302,7 @@ async function saveDocument(documentData: DocumentSchema, content: string): Prom
 				],
 				(err) => {
 					if (err) {
-						console.log(err)
+						log(err)
 						reject(err)
 					}
 				}
@@ -309,7 +314,7 @@ async function saveDocument(documentData: DocumentSchema, content: string): Prom
 				[documentData.document_id],
 				(err, rows) => {
 					if (err) {
-						console.log(err)
+						log(err)
 						reject(err)
 					}
 					for (const row of rows) {
@@ -325,7 +330,7 @@ async function saveDocument(documentData: DocumentSchema, content: string): Prom
 				[documentData.document_id],
 				(err) => {
 					if (err) {
-						console.log(err)
+						log(err)
 						reject(err)
 					}
 				}
@@ -335,17 +340,17 @@ async function saveDocument(documentData: DocumentSchema, content: string): Prom
 			VALUES (?, ?, ?, ?) RETURNING content_id`
 			)
 			for (let i = 0; i < plainTextChunks.length; i++) {
-				console.log(`Partition ${i}: ${plainTextChunks[i]}`)
+				log(`Partition ${i}: ${plainTextChunks[i]}`)
 				saveStatemenet.get<{ content_id: number }>(
 					[documentData.document_id, i, mimeFormatChunks[i], plainTextChunks[i]],
 					(err, row) => {
 						if (row) {
-							console.log(
+							log(
 								`Data: ${JSON.stringify({ kind: 'DATA', id: row.content_id, data: plainTextChunks[i] })}`
 							)
 							newRequest({ kind: 'DATA', id: row.content_id, data: plainTextChunks[i] })
 						} else {
-							console.log(err)
+							log(err)
 							reject(err)
 						}
 					}
@@ -367,7 +372,7 @@ async function deleteDocument(id: number): Promise<void> {
 			[id],
 			(err) => {
 				if (err) {
-					console.log(err)
+					log(err)
 				}
 			}
 		)
@@ -401,7 +406,7 @@ async function createResult(key: number, distance: number): Promise<ResultType> 
 			[key],
 			(err, row) => {
 				if (err) {
-					console.log(err)
+					log(err)
 					reject(err)
 				} else {
 					resolve({ ...row, distance })
@@ -420,7 +425,7 @@ async function sendSearchResult(data: ServerResponse): Promise<void> {
 		response.documents.push(await createResult(key, distance))
 	}
 	mainWindow.webContents.send('search-result', response)
-	console.log('Sending search result')
+	log('Sending search result')
 }
 
 function createNewDocument(): Promise<number> {

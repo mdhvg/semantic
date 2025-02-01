@@ -10,9 +10,12 @@
 	"dbFile": "./documents.sqlite",
 	"indexFile": "./index.usearch",
 
-	"serverDir": "server",
+	"serverSource": {
+		"url": "https://github.com/mdhvg/semantic-server/archive/refs/heads/main.zip",
+		"path": "server",
+		"zip": "server.zip"
+	},
 
-	"pythonEnvDir": "server/.env",
 	"requirementsFile": "server/requirements.txt",
 	"pythonServerFile": "server/server.py",
 
@@ -31,14 +34,20 @@
 	"maxMessageLen": 4096,
 
 	"win32": {
-		"embeddedPython": {
+		"python": {
 			"url": "https://www.python.org/ftp/python/3.12.8/python-3.12.8-embed-amd64.zip",
 			"path": "embedded_python",
-			"zip": "embedded_python.zip"
+			"zip": "embedded_python.zip",
+			"binary": "embedded_python/python.exe"
 		},
 		"getpip": {
 			"url": "https://bootstrap.pypa.io/get-pip.py",
 			"path": "embedded_python/getpip.py"
+		}
+	},
+	"linux": {
+		"python": {
+			"binary": ".env/bin/python3"
 		}
 	}
 }

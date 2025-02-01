@@ -9,3 +9,7 @@ out
 *.sqlite-journal
 *.db
 *.usearch
+
+server
+embedded_python
+*.zip
