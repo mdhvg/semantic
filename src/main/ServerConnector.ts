@@ -75,7 +75,7 @@ export class ServerConnector {
 	public async connect(
 		port: number,
 		host: string,
-		maxAttempts: number = 20,
+		maxAttempts: number = 100,
 		timeout: number = 1000,
 		delay: number = 5500
 	): Promise<void> {

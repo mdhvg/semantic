@@ -11,7 +11,7 @@ import { Index, MetricKind } from 'usearch'
 import { existsSync } from 'fs'
 import type { ResultType, SearchDocument, ServerMessage } from '$shared/types'
 import WebSocket, { WebSocketServer } from 'ws'
-import { setupPythonServer, startEmbeddingServer } from './Backend'
+import { initiliazeBackend } from './Backend'
 
 let mainWindow: BrowserWindow
 let serverConnector: ServerConnector
@@ -45,15 +45,9 @@ function createWindow(): void {
 	})
 
 	mainWindow.on('show', () => {
-		setupPythonServer(!is.dev).then(async (value: boolean) => {
-			if (value) {
-				if (!(await startEmbeddingServer())) {
-					throw new Error('Failed to start the server')
-				}
-				serverConnector.connect(config.serverAddress.port, config.serverAddress.host).then(() => {
-					log('Connected to server')
-				})
-			}
+		initiliazeBackend(!is.dev)
+		serverConnector.connect(config.serverAddress.port, config.serverAddress.host).then(() => {
+			log('Connected to server')
 		})
 
 		wss = new WebSocketServer({

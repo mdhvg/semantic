@@ -9,9 +9,12 @@ import {
 	statSync
 } from 'fs'
 import Redirects from 'follow-redirects'
-import { execSync, spawn } from 'child_process'
+import { exec, execSync, spawn } from 'child_process'
 import AdmZip from 'adm-zip'
 import { config, log, logError } from './utils'
+import { promisify } from 'util'
+
+const execAsync = promisify(exec)
 
 /*
  * The backend class sets up the python backend for the application as follows:
@@ -91,12 +94,12 @@ export async function extractFileToDir(
 
 export async function setupPythonServer(isdev: boolean): Promise<boolean> {
 	if (isdev) {
-		return new Promise((_, reject) => reject(false))
+		false
 	}
 
 	if (existsSync(join(config.serverSource.path, '.installed'))) {
 		log('Python server already installed')
-		return new Promise((resolve) => resolve(true))
+		return true
 	}
 
 	log('Setting up server')
@@ -108,12 +111,12 @@ export async function setupPythonServer(isdev: boolean): Promise<boolean> {
 	if (!existsSync(config.serverSource.zip) || statSync(config.serverSource.zip).size === 0) {
 		const download = await downloadFile(config.serverSource.url, config.serverSource.zip)
 		if (!download) {
-			return new Promise((_, reject) => reject(false))
+			return false
 		}
 	}
 	const extracted = await extractFileToDir(config.serverSource.zip, config.serverSource.path)
 	if (!extracted) {
-		return new Promise((_, reject) => reject(false))
+		return false
 	}
 	appendFileSync(join(config.serverSource.path, '.installed'), '')
 
@@ -125,7 +128,7 @@ export async function setupPythonServer(isdev: boolean): Promise<boolean> {
 			return setupPythonServerOnLinux()
 		default:
 			log(`${process.platform} is not supported`)
-			return new Promise((_, reject) => reject(false))
+			return false
 	}
 }
 
@@ -177,20 +180,28 @@ async function setupPythonServerOnWindows(): Promise<boolean> {
 		files.forEach((file) => {
 			appendFileSync(join(config.win32.python.path, file), 'import site')
 		})
-		const response = execSync(
-			`${join(config.win32.python.path, 'python.exe')} ${config.win32.getpip.path}`
-		).toString()
-		log(response)
+		try {
+			const response = await execAsync(
+				`${resolve(config.win32.python.binary)} ${config.win32.getpip.path}`,
+				{ windowsHide: true }
+			)
+			log(response.stdout)
 
-		const installResponse = execSync(
-			`${resolve(join(config.win32.python.path, 'python.exe'))} -m pip install -r ${resolve(config.requirementsFile)}`,
-			{ stdio: 'inherit' }
-		).toString()
-		log(installResponse)
-		appendFileSync(installFlag, '')
-		log('Success ✨')
+			const installResponse = await execAsync(
+				`${resolve(config.win32.python.binary)} -m pip install -r ${resolve(config.requirementsFile)}`,
+				{ windowsHide: true }
+			)
+			log(installResponse.stdout)
+
+			appendFileSync(installFlag, '')
+
+			log('Success ✨')
+		} catch (error) {
+			logError(`Error while installing pip\n${error}`)
+			return false
+		}
 	}
-	return new Promise((resolve) => resolve(true))
+	return true
 }
 
 async function setupPythonServerOnLinux(): Promise<boolean> {
@@ -254,7 +265,7 @@ async function startEmbeddingServerOnLinux(): Promise<boolean> {
 		const pythonProcess = spawn(
 			join(config.pythonEnvDir, 'bin', 'python'),
 			[config.pythonServerFile],
-			{ stdio: 'inherit' }
+			{ stdio: 'inherit', shell: false }
 		)
 		pythonProcess.on('close', (code) => {
 			log(`Python server exited with code ${code}`)
@@ -272,7 +283,7 @@ async function startEmbeddingServerOnWindows(): Promise<boolean> {
 		const pythonProcess = spawn(
 			join(config.win32.python.binary),
 			[resolve(config.pythonServerFile)],
-			{ stdio: 'inherit' }
+			{ stdio: 'inherit', shell: false }
 		)
 		pythonProcess.on('close', (code) => {
 			log(`Python server exited with code ${code}`)
@@ -283,4 +294,19 @@ async function startEmbeddingServerOnWindows(): Promise<boolean> {
 		logError(`Error while starting python embedding server\n${error}`)
 		return false
 	}
+}
+
+export async function initiliazeBackend(isDev: boolean): Promise<void> {
+	setupPythonServer(isDev)
+		.then(async (value: boolean) => {
+			if (value) {
+				const embeddingStarted = await startEmbeddingServer()
+				if (!embeddingStarted) {
+					throw new Error('Failed to start server')
+				}
+			}
+		})
+		.catch((error) => {
+			log(`Error initializing backend: ${error.message}`)
+		})
 }
