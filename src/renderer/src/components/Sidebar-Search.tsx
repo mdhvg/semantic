@@ -76,7 +76,7 @@ export function SidebarSearch(): React.ReactElement {
 										</span>
 										<span className="text-muted-foreground">{`index: ${result.sequence_number}`}</span>
 										<span className="ml-auto text-muted-foreground">
-											{(result.distance * 100).toFixed(2)}% Match
+											{result.distance.toFixed(2)} match
 										</span>
 									</CommandItem>
 								))}

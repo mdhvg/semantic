@@ -45,7 +45,7 @@ function createWindow(): void {
 	})
 
 	mainWindow.on('show', () => {
-		initiliazeBackend(!is.dev)
+		initiliazeBackend(is.dev)
 		serverConnector.connect(config.serverAddress.port, config.serverAddress.host).then(() => {
 			log('Connected to server')
 		})
@@ -154,6 +154,7 @@ app.whenReady().then(async () => {
 
 	createWindow()
 
+	// TODO: Change the vector size to be dynamic based on model currently loaded
 	index = new Index(768, MetricKind.Cos)
 	if (existsSync(config.indexFile)) {
 		index.load(config.indexFile)
