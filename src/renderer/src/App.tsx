@@ -15,11 +15,10 @@ import { defaultDocument } from '@/lib/utils'
 export default function App(): React.ReactElement {
 	const document = useAtomValue(ActiveDocumentAtom)
 	const [, setDocuments] = useAtom<DocumentSchema[]>(DocumentsAtom)
-	const [content, setContent] = useAtom(ActiveDocumentContentAtom)
+	const content = useAtomValue(ActiveDocumentContentAtom)
 
 	const saveDocument = (): void => {
 		document && window.api.saveDocument(document, content.contentString)
-		setContent(content.content)
 	}
 
 	const deleteDocument = (): void => {

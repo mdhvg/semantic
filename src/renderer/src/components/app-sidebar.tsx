@@ -14,7 +14,7 @@ import {
 import { PreviousDocuments } from './Previous-Documents'
 import type { SearchDocument, DocumentSchema } from '$shared/types'
 import { useAtom } from 'jotai'
-import { CommandAtom, DocumentsAtom, SearchResultsAtom } from '@/store'
+import { ActiveDocumentIDAtom, CommandAtom, DocumentsAtom, SearchResultsAtom } from '@/store'
 import { SidebarSearch } from './Sidebar-Search'
 import { defaultDocument } from '@/lib/utils'
 
@@ -38,6 +38,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
 	const [, setDocuments] = useAtom<DocumentSchema[]>(DocumentsAtom)
 	const [commandOpen, setCommandOpen] = useAtom<boolean>(CommandAtom)
 	const [, setSearchResults] = useAtom<SearchDocument['documents']>(SearchResultsAtom)
+	const [, setActiveDocument] = useAtom(ActiveDocumentIDAtom)
 
 	const flipCommandOpen = (): void => {
 		setCommandOpen((open) => {
@@ -108,6 +109,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
 							onClick={() =>
 								window.api.newDocument().then((newDocId) => {
 									setDocuments((documents) => [...documents, defaultDocument(newDocId)])
+									setActiveDocument(newDocId)
 								})
 							}
 						>

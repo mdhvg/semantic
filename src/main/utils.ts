@@ -85,8 +85,8 @@ export const splitContent = (
 			break
 	}
 
-	const plainText = he.decode(String(processor.processSync(content).value))
-	const wordsWithSpaces = plainText.match(/[A-Za-z'.,-]+/g)?.filter((word) => word.length > 2)
+	const plainText = he.decode(String(processor.processSync(content).value)).normalize()
+	const wordsWithSpaces = plainText.match(/[A-Za-z-]+/g)?.filter((word) => word.length > 2)
 
 	const plainTextChunks: string[] = []
 	const mimeFormatChunks: string[] = []

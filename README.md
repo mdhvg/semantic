@@ -1,4 +1,6 @@
-# Semantic: A document management and querying system that uses Semantic Search
+# Semantic
+
+_A document management and querying system that uses Semantic Search_
 
 <p align="center">
 <img width="60%" src="Documentation/Logo.png" style="filter:drop-shadow(0 0 7px rgb(24, 21, 48, 0.5))"/>
@@ -7,17 +9,20 @@ Semantic is made to end tab hoarding and efficiently search for documents and im
 
 The approach is similar to [TagStudio](https://github.com/TagStudioDev/TagStudio) but also uses semantic search for querying.
 
-> [!CAUTION]
-> This is far from being a complete application. So far this is just a side project with lot of broken code.
+> This is still work in progress btw...
+
+![Screenshot](Documentation/Screenshot.png)
 
 ## Contents
 
 - [Development](#Development)
 - [Todos](#Todos)
 
-## Development
+## Development (current preferred mode for running)
 
-- Clone this repo and cd into it:
+### For semantic client
+
+- Clone this repo and change directory into it:
 
 ```bash
 git clone https://github.com/mdhvg/semantic.git
@@ -30,36 +35,41 @@ cd semantic
 npm i
 ```
 
+### For semantic server
+
+- Clone the semantic server (in a separate directory)
+
+```bash
+git clone https://github.com/mdhvg/semantic-server.git
+cd semantic-server
+```
+
 - Create python environment (optional, but recommended) and install python depencencies:
 
 ```bash
-cd backend
-```
-
-```bash
 python -m venv .env
-source ./.env/bin/activate
+source .env/bin/activate
 ```
 
 ```bash
-pip install -r ../resources/common/requirements.txt
+pip install -r requirements.txt
 ```
 
-- Run the client application in development mode:
+- (From client Directory) Run the client application in development mode:
 
 ```bash
 npm run dev
 ```
 
-- Start the python server (In a separate terminal after activating the environment):
+- (From the server Directory) Start the python server (In a separate terminal after activating the environment):
 
 ```bash
-cd backend
 python main.py
 ```
 
 ## TODOs
 
+- [ ] Replace entire python backend with a C++ backend using [llama.cpp](https://github.com/ggerganov/llama.cpp).
 - [x] Fix order of backend setup. The backend should perform checks in the following order:
 
   - Embedded python files

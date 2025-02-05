@@ -5,11 +5,11 @@ import {
 	existsSync,
 	mkdirSync,
 	readdirSync,
-	rmdirSync,
+	rmSync,
 	statSync
 } from 'fs'
 import Redirects from 'follow-redirects'
-import { exec, execSync, spawn } from 'child_process'
+import { exec, spawn } from 'child_process'
 import AdmZip from 'adm-zip'
 import { config, log, logError } from './utils'
 import { promisify } from 'util'
@@ -104,7 +104,7 @@ export async function setupPythonServer(isdev: boolean): Promise<boolean> {
 
 	log('Setting up server')
 	if (existsSync(config.serverSource.path)) {
-		rmdirSync(config.serverSource.path, { recursive: true })
+		rmSync(config.serverSource.path, { recursive: true })
 	}
 	mkdirSync(config.serverSource.path, { recursive: true })
 
@@ -134,11 +134,11 @@ export async function setupPythonServer(isdev: boolean): Promise<boolean> {
 
 async function setupPythonServerOnWindows(): Promise<boolean> {
 	log('[Step 1/3]: Checking for python installation')
-	const binaryPath = join(config.win32.python.path, 'python.exe')
-	const installFlag = join(config.win32.python.path, '.installed')
+	const binaryPath = config.win32.python.binary
+	const installFlag = config.win32.python.flag
 	if (existsSync(installFlag)) {
 		log('Python already installed')
-		return new Promise((resolve) => resolve(true))
+		return true
 	}
 	if (!existsSync(binaryPath)) {
 		log('Python not found')
@@ -162,13 +162,13 @@ async function setupPythonServerOnWindows(): Promise<boolean> {
 		}
 
 		if (!pythonDownloaded || !pipDownloaded) {
-			return new Promise((_, reject) => reject(false))
+			return false
 		}
 
 		log('Extracting python')
 		const extracted = await extractFileToDir(config.win32.python.zip, config.win32.python.path)
 		if (!extracted) {
-			return new Promise((_, reject) => reject(false))
+			return false
 		}
 
 		log('Installing pip')
@@ -188,7 +188,7 @@ async function setupPythonServerOnWindows(): Promise<boolean> {
 			log(response.stdout)
 
 			const installResponse = await execAsync(
-				`${resolve(config.win32.python.binary)} -m pip install -r ${resolve(config.requirementsFile)}`,
+				`${resolve(config.win32.python.binary)} -m pip install -r ${resolve(config.serverSource.requirements)}`,
 				{ windowsHide: true }
 			)
 			log(installResponse.stdout)
@@ -205,46 +205,52 @@ async function setupPythonServerOnWindows(): Promise<boolean> {
 }
 
 async function setupPythonServerOnLinux(): Promise<boolean> {
-	return new Promise((resolve, reject) => {
-		log('[Step 1/3]: Checking for python installation')
-		try {
-			const response = execSync('python --version').toString()
-			if (response.startsWith('Python')) {
-				log(`Found python: ${response}`)
-			}
-		} catch (error) {
-			log(`Error while checking for python installation\n${error}`)
-			return reject(false)
+	log('[Step 1/3]: Checking for python installation')
+	const binaryPath = config.linux.python.binary
+	const installFlag = config.linux.python.flag
+	let response: { stdout: string; stderr: string } = { stdout: '', stderr: '' }
+	if (existsSync(installFlag)) {
+		log('Python already installed')
+		return true
+	}
+	if (!existsSync(binaryPath)) {
+		log('Python not found')
+		log('Installing python')
+		response = await execAsync('python --version')
+		if (response.stdout.startsWith('Python')) {
+			log(`Found python: ${response.stdout}`)
+		}
+		if (response.stderr) {
+			log(`Error while checking for python installation\n${response.stderr}`)
+			return false
 		}
 
-		log(`[Step 2/3]: Checking for existing virtual environment in ${config.pythonEnvDir}`)
-		const binDir = join(config.pythonEnvDir, 'bin')
-		if (existsSync(join(binDir, 'python')) || existsSync(join(binDir, 'python3'))) {
+		log(`[Step 2/3]: Checking for existing virtual environment in ${config.linux.python.path}`)
+		if (existsSync(resolve(config.linux.python.binary))) {
 			log('Found existing virtual environment')
-			return resolve(true)
+			return true
 		}
 
-		try {
-			execSync(`python -m venv ${config.pythonEnvDir}`).toString()
-			log('Success ✨')
-		} catch (error) {
-			log(`Error while creating virtual environment\n${error}`)
-			return reject(false)
+		response = await execAsync(`python -m venv ${config.linux.python.path}`)
+		if (response.stderr) {
+			log(`Error while creating virtual environment\n${response.stderr}`)
+			return false
 		}
+		log('Success ✨')
 
-		log(`[Step 3/3]: Installing dependencies listed in ${config.requirementsFile}`)
-		try {
-			const response = execSync(
-				`chmod +x ${config.setupScript} && bash ${config.setupScript} "${config.serverDir}" "pip install -r ${config.requirementsFile}"`
-			).toString()
-			log(response)
-			log('Success ✨')
-		} catch (error) {
-			log(`Error while installing dependencies\n${error}`)
-			return reject(false)
+		log(`[Step 3/3]: Installing dependencies listed in ${config.serverSource.requirements}`)
+		response = await execAsync(
+			`${resolve(config.linux.python.binary)} -m pip install -r ${resolve(config.serverSource.requirements)}`
+		)
+		if (response.stderr) {
+			log(`Error while getting python executable\n${response.stderr}`)
+			return false
 		}
-		return resolve(true)
-	})
+		log(response.stdout)
+
+		appendFileSync(installFlag, '')
+	}
+	return true
 }
 
 export async function startEmbeddingServer(): Promise<boolean> {
@@ -263,8 +269,8 @@ export async function startEmbeddingServer(): Promise<boolean> {
 async function startEmbeddingServerOnLinux(): Promise<boolean> {
 	try {
 		const pythonProcess = spawn(
-			join(config.pythonEnvDir, 'bin', 'python'),
-			[config.pythonServerFile],
+			join(config.linux.python.binary),
+			[resolve(config.pythonServerFile)],
 			{ stdio: 'inherit', shell: false }
 		)
 		pythonProcess.on('close', (code) => {

@@ -142,6 +142,7 @@ export const MarkdownEditor = (): React.ReactElement => {
 			className={cn(
 				view === View.SPLIT ? 'grid' : 'flex',
 				view === View.SPLIT ? 'grid-cols-2' : 'flex-col',
+				'grid-rows-1',
 				'flex-1',
 				'overflow-auto',
 				'w-full',
@@ -163,7 +164,9 @@ export const MarkdownEditor = (): React.ReactElement => {
 						'bg-background',
 						'resize-none',
 						'overflow-y-scroll',
-						'p-2'
+						'p-2',
+						'border-border',
+						view === View.SPLIT && 'border-r-[1px]'
 					)}
 					onChange={(e) => setContent(e.target.value)}
 					ref={textAreaRef}

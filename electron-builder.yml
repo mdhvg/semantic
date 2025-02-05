@@ -9,6 +9,12 @@ files:
   - '!{.eslintignore,.eslintrc.cjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+  - '!{.sqlite,.usearch}'
+  - '!{.zip}'
+  - '!{server,embedded_python}'
+extraFiles:
+  from: 'config.json'
+  to: 'config.json'
 asarUnpack:
   - resources/**
 win:
