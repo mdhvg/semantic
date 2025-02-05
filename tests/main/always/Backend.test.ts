@@ -11,7 +11,7 @@ import { existsSync } from 'fs'
 import { config } from '../../../src/main/utils'
 import { join } from 'path'
 
-test('Test python setup on Windows', async () => {
+test('Test python setup', async () => {
 	await setupPythonServer(false)
 	expect(existsSync(config.win32.python.path)).toBe(true)
 	expect(existsSync(join(config.win32.python.path, 'python.exe'))).toBe(true)
