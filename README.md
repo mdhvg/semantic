@@ -69,26 +69,16 @@ python main.py
 
 ## TODOs
 
-- [ ] Replace entire python backend with a C++ backend using [llama.cpp](https://github.com/ggerganov/llama.cpp).
-- [x] Fix order of backend setup. The backend should perform checks in the following order:
+- [ ] [UI] Use fuzzy search algorithm to find searched element document preview.
 
-  - Embedded python files
-  - Python environment setup
+- [ ] [Server] Replace entire python backend with a C++ backend using [llama.cpp](https://github.com/ggerganov/llama.cpp).
 
-  All checks are to be performed on the first startup of the app only.
+- [ ] [UI] Imeplement the mime type switcher in the editor
 
-- [x] Implement Windows python backend setup using [Windows Embeddable python package](https://www.python.org/ftp/python/3.11.9/python-3.11.9-embed-amd64.zip) and [get-pip.py](https://github.com/pypa/get-pip)
+- [ ] [Backend] To make sure all files of embedded python binary are successfully downloaded, compare their hashes too.
 
-  - Command for downloading get-pip.py `curl -sSL https://bootstrap.pypa.io/get-pip.py -o get-pip.py`
+- [ ] [UI] Create server status bar.
 
-- [ ] To make sure all files of embedded python binary are successfully downloaded, compare their hashes too.
+- [ ] [UI] Implement editing text using buttons (like Bold, Italic, etc) in the editor.
 
-- [ ] Move the python version, download links, etc to a separate config file.
-
-- [ ] Set an electron persistent variable using [Electron-store](https://github.com/sindresorhus/electron-store) to avoid recreation of backend environment.
-
-- [ ] Implement server status bar on the frontend.
-
-- [ ] Implement editing text using buttons (like Bold, Italic, etc) in the editor
-
-- [ ] Enable keybind support
+- [ ] [UI] Enable keybind support.

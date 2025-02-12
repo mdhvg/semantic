@@ -8,7 +8,7 @@ declare global {
 			newDocument: () => Promise<number>
 			serverStatus: ServerStatus
 			fetchDocuments: () => Promise<DocumentSchema[]>
-			getDocument: (id: number) => Promise<DocumentContentSchema[]>
+			getDocument: (id: number) => Promise<DocumentContentSchema>
 			saveDocument: (documentData: DocumentSchema, content: string) => void
 			deleteDocument: (id: number) => Promise<void>
 			searchDocument: (query: string) => Promise<void>

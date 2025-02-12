@@ -13,9 +13,15 @@ import { join } from 'path'
 
 test('Test python setup', async () => {
 	await setupPythonServer(false)
-	expect(existsSync(config.win32.python.path)).toBe(true)
-	expect(existsSync(join(config.win32.python.path, 'python.exe'))).toBe(true)
-	expect(existsSync(config.win32.python.zip)).toBe(true)
-	expect(existsSync(config.win32.getpip.path)).toBe(true)
-	expect(existsSync(join(config.win32.python.path, '.installed'))).toBe(true)
+
+	if (process.platform === 'win32') {
+		expect(existsSync(config.win32.python.path)).toBe(true)
+		expect(existsSync(join(config.win32.python.path, 'python.exe'))).toBe(true)
+		expect(existsSync(config.win32.python.zip)).toBe(true)
+		expect(existsSync(config.win32.getpip.path)).toBe(true)
+		expect(existsSync(join(config.win32.python.path, '.installed'))).toBe(true)
+	}
+	if (process.platform === 'linux') {
+		expect(existsSync(config.linux.python.path)).toBe(true)
+	}
 })

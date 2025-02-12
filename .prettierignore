@@ -6,3 +6,4 @@ tsconfig.json
 tsconfig.*.json
 server
 embedded_python
+.env

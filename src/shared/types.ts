@@ -19,12 +19,16 @@ export type DocumentSchema = {
 	deleted_time_left: number
 }
 
-export type DocumentContentSchema = {
+export type DocumentChunkSchema = {
 	content_id: number
 	document_id: number
 	sequence_number: number
-	content: string
 	plain_text: string
+}
+
+export type DocumentContentSchema = {
+	document_id: number
+	content: string
 }
 
 export type DocumentMap = {
@@ -55,18 +59,12 @@ export type SearchDocument = {
 	documents: ResultType[]
 }
 
-export type ResultType = DocumentContentSchema & { distance: number }
+export type ResultType = DocumentChunkSchema & { distance: number }
 
 export enum View {
 	PREVIEW = 'PREVIEW',
 	EDIT = 'EDIT',
 	SPLIT = 'SPLIT'
-}
-
-export type ContentSchemanAndString = {
-	content: DocumentContentSchema[]
-	contentString: string
-	dirty: boolean
 }
 
 export type ServerMessage =

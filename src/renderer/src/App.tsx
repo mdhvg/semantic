@@ -18,7 +18,7 @@ export default function App(): React.ReactElement {
 	const content = useAtomValue(ActiveDocumentContentAtom)
 
 	const saveDocument = (): void => {
-		document && window.api.saveDocument(document, content.contentString)
+		document && window.api.saveDocument(document, content)
 	}
 
 	const deleteDocument = (): void => {

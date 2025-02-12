@@ -5,7 +5,6 @@ import {
 	ActiveDocumentContentAtom,
 	ActiveDocumentIDAtom,
 	DocumentContentsAtom,
-	FocusAtom,
 	ViewAtom
 } from '@/store'
 import { useAtom, useAtomValue } from 'jotai'
@@ -19,7 +18,7 @@ import rehypeRaw from 'rehype-raw'
 import * as Runtime from 'react/jsx-runtime'
 import { View } from '$shared/types'
 
-const createMarkdown = (input: string): React.ReactNode => {
+const markdown2html = (input: string): React.ReactNode => {
 	return unified()
 		.use(remarkParse)
 		.use(remarkGfm)
@@ -35,8 +34,8 @@ export const MarkdownEditor = (): React.ReactElement => {
 	const documentContents = useAtomValue(DocumentContentsAtom)
 	const view = useAtomValue<View>(ViewAtom)
 	const textAreaRef = useRef<HTMLTextAreaElement>(null)
-	const [focus, setFocus] = useAtom<number | null>(FocusAtom)
-	const [preview, setPreview] = useState<React.ReactNode[]>([createElement(Fragment)])
+	// const [focus, setFocus] = useAtom<number | null>(FocusAtom)
+	const [preview, setPreview] = useState<React.ReactNode>(createElement(Fragment))
 	const previewRef = useRef<HTMLDivElement>(null)
 
 	const createEditorAndPreview = (): void => {
@@ -46,59 +45,21 @@ export const MarkdownEditor = (): React.ReactElement => {
 			case View.EDIT:
 				{
 					if (textAreaRef.current !== null) {
-						textAreaRef.current.value = content.contentString
+						textAreaRef.current.value = content
 					}
 				}
 				break
 			case View.PREVIEW:
 				{
-					const previewArray: React.ReactNode[] = []
-					if (!content.dirty) {
-						for (const part of content.content) {
-							previewArray.push(
-								<span
-									className={cn(
-										'invisible',
-										`content--${part.content_id}`,
-										`document--${activeDocument}`,
-										'w-0',
-										'h-0'
-									)}
-								></span>
-							)
-							previewArray.push(createMarkdown(part.content))
-						}
-					} else {
-						previewArray.push(createMarkdown(content.contentString))
-					}
-					setPreview(previewArray)
+					setPreview(markdown2html(content))
 				}
 				break
 			case View.SPLIT:
 				{
 					if (textAreaRef.current !== null) {
-						textAreaRef.current.value = content.contentString
+						textAreaRef.current.value = content
 					}
-					const previewArray: React.ReactNode[] = []
-					if (!content.dirty) {
-						for (const part of content.content) {
-							previewArray.push(
-								<span
-									className={cn(
-										'hidden',
-										`content--${part.content_id}`,
-										`document--${activeDocument}`,
-										'w-0',
-										'h-0'
-									)}
-								></span>
-							)
-							previewArray.push(createMarkdown(part.content))
-						}
-					} else {
-						previewArray.push(createMarkdown(content.contentString))
-					}
-					setPreview(previewArray)
+					setPreview(markdown2html(content))
 				}
 				break
 			default:
@@ -113,28 +74,28 @@ export const MarkdownEditor = (): React.ReactElement => {
 			if (documentContents[activeDocument] === undefined) {
 				window.api.getDocument(activeDocument).then((fetchedContent) => {
 					console.log(fetchedContent)
-					setContent(fetchedContent)
+					setContent(fetchedContent.content)
 				})
 			} else {
-				setContent(documentContents[activeDocument].contentString)
+				setContent(documentContents[activeDocument])
 			}
 		}
 
-		setTimeout(() => {
-			if (focus !== null) {
-				const element = previewRef.current?.querySelector(`.content--${focus}`)
-				element?.scrollIntoView()
-				console.log(element)
-				if (element) {
-					const nextElement = element.nextElementSibling
-					console.log(nextElement)
-					if (nextElement !== null) {
-						nextElement.scrollIntoView()
-					}
-				}
-				setFocus(null)
-			}
-		}, 2000)
+		// setTimeout(() => {
+		// 	if (focus !== null) {
+		// 		const element = previewRef.current?.querySelector(`.content--${focus}`)
+		// 		element?.scrollIntoView()
+		// 		console.log(element)
+		// 		if (element) {
+		// 			const nextElement = element.nextElementSibling
+		// 			console.log(nextElement)
+		// 			if (nextElement !== null) {
+		// 				nextElement.scrollIntoView()
+		// 			}
+		// 		}
+		// 		setFocus(null)
+		// 	}
+		// }, 2000)
 	}, [activeDocument])
 
 	return (
@@ -186,9 +147,7 @@ export const MarkdownEditor = (): React.ReactElement => {
 					)}
 					ref={previewRef}
 				>
-					{preview.map((element, index) => (
-						<Fragment key={index}>{element}</Fragment>
-					))}
+					{preview}
 				</div>
 			)}
 		</div>

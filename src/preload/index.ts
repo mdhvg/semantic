@@ -8,7 +8,7 @@ const api = {
 	newDocument: (): Promise<number> => ipcRenderer.invoke('new-document'),
 	// serverStatus: (): ServerStatus => ipcRenderer.invoke('server-status'),
 	fetchDocuments: (): Promise<DocumentSchema[]> => ipcRenderer.invoke('fetch-documents'),
-	getDocument: (id: number): Promise<DocumentContentSchema[]> =>
+	getDocument: (id: number): Promise<DocumentContentSchema> =>
 		ipcRenderer.invoke('get-document', id),
 	saveDocument: (documentData: DocumentSchema, content: string): Promise<void> =>
 		ipcRenderer.invoke('save-document', documentData, content),

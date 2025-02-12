@@ -121,3 +121,22 @@ export class ServerConnector {
 		}
 	}
 }
+
+export async function pollRequests(requestQ: ServerMessage[]): Promise<void> {
+	const serverConnector = ServerConnector.getInstance()
+	while (requestQ.length > 0) {
+		if (!serverConnector.connected) {
+			await Delay(1000)
+		} else {
+			const request = requestQ.shift()
+			if (request) {
+				await serverConnector.sendMessage(request)
+			}
+		}
+	}
+}
+
+export function newRequest(request: ServerMessage, requestQ: ServerMessage[]): void {
+	requestQ.push(request)
+	pollRequests(requestQ)
+}

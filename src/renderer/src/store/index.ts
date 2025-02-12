@@ -1,11 +1,5 @@
 import { atom } from 'jotai'
-import {
-	ContentSchemanAndString,
-	DocumentContentSchema,
-	DocumentSchema,
-	SearchDocument,
-	View
-} from '$shared/types'
+import { DocumentSchema, SearchDocument, View } from '$shared/types'
 
 export const DocumentsAtom = atom<DocumentSchema[]>([])
 
@@ -26,40 +20,20 @@ export const ActiveDocumentAtom = atom(
 	}
 )
 
-export const DocumentContentsAtom = atom<Record<number, ContentSchemanAndString>>({})
+export const DocumentContentsAtom = atom<Record<number, string>>({})
 
 export const ActiveDocumentContentAtom = atom(
 	(get) => {
 		const activeDocumentID = get(ActiveDocumentIDAtom)
 		const documentContents = get(DocumentContentsAtom)
-		return activeDocumentID !== null
-			? documentContents[activeDocumentID]
-			: { content: [], contentString: '', dirty: false }
+		return activeDocumentID !== null ? documentContents[activeDocumentID] : ''
 	},
-	(get, set, newContent: DocumentContentSchema[] | string) => {
+	(get, set, newContent: string) => {
 		console.log('setting content', newContent)
 		const activeDocumentID = get(ActiveDocumentIDAtom)
 		if (activeDocumentID !== null) {
 			const documentContents = get(DocumentContentsAtom)
-			if (typeof newContent === 'string') {
-				set(DocumentContentsAtom, {
-					...documentContents,
-					[activeDocumentID]: {
-						content: documentContents[activeDocumentID].content,
-						contentString: newContent,
-						dirty: true
-					}
-				})
-			} else {
-				set(DocumentContentsAtom, {
-					...documentContents,
-					[activeDocumentID]: {
-						content: newContent,
-						contentString: newContent.map((c) => c.content).join(''),
-						dirty: false
-					}
-				})
-			}
+			set(DocumentContentsAtom, { ...documentContents, [activeDocumentID]: newContent })
 		}
 	}
 )
