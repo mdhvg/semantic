@@ -1,0 +1,38 @@
+<svg
+				width="32"
+				height="32"
+				viewBox="0 0 512 512"
+				fill="none"
+				xmlns="http://www.w3.org/2000/svg"
+			>
+				<g>
+					<circle cx="142.175" cy="416.262" r="34.1748" fill="white" />
+					<circle cx="219.845" cy="143.641" r="34.1748" fill="white" />
+					<circle cx="393.825" cy="161.505" r="34.1748" fill="white" />
+					<circle cx="359.65" cy="426.359" r="34.1748" fill="white" />
+					<line
+						x1="227.538"
+						y1="145.833"
+						x2="149.869"
+						y2="418.454"
+						stroke="white"
+						stroke-width="16"
+					/>
+					<line
+						x1="399.517"
+						y1="167.127"
+						x2="147.866"
+						y2="421.884"
+						stroke="white"
+						stroke-width="16"
+					/>
+					<line
+						x1="140.24"
+						y1="407.495"
+						x2="360.046"
+						y2="418.369"
+						stroke="white"
+						stroke-width="16"
+					/>
+				</g>
+			</svg>

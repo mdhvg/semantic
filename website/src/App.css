@@ -1,0 +1,16 @@
+@import 'tailwindcss';
+
+@theme {
+	--color-background: #070708;
+	--color-nav: #0f0f0f;
+	--color-foreground: #d5d5d5;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+#root {
+	width: 100vw;
+	height: 100vh;
+}
