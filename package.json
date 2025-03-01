@@ -28,6 +28,61 @@
 		"build:mac": "electron-vite build && electron-builder --mac",
 		"build:linux": "electron-vite build && electron-builder --linux"
 	},
+	"build": {
+		"productName": "Semantic",
+		"appId": "com.semantic",
+		"npmRebuild": false,
+		"asar": false,
+		"directories": {
+			"buildResources": "build",
+			"output": "dist"
+		},
+		"files": [
+			"!**/.vscode/*",
+			"!src/*",
+			"!electron.vite.config.{js,ts,mjs,cjs}",
+			"!{.eslintignore,.eslintrc.cjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}",
+			"!{.env,.env.*,.npmrc,pnpm-lock.yaml}",
+			"!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}",
+			"!{*.sqlite,*.usearch}",
+			"!server.zip",
+			"!tailwind*",
+			"!vitest*",
+			"!postcss*",
+			"!components.json",
+			"!{server,embedded_python}",
+			"!Documentation",
+			"!resources",
+			"!tests",
+			"!LICENSE"
+		],
+		"extraFiles": [
+			{
+				"from": "config.json",
+				"to": "config.json"
+			},
+			{
+				"from": "LICENSE",
+				"to": "LICENSE"
+			}
+		],
+		"linux": {
+			"icon": "build/icons",
+			"category": "Utility",
+			"description": "A search engine for your ideas",
+			"target": [
+				"AppImage",
+				"snap",
+				"deb"
+			],
+			"desktop": {
+				"Name": "Semantic",
+				"Categories": "Utility;Search;",
+				"Comment": "A search engine for your ideas",
+				"Keywords": "search;engine;ideas;semantic;knowledge;management;note;note-taking;"
+			}
+		}
+	},
 	"dependencies": {
 		"@codemirror/commands": "^6.7.1",
 		"@codemirror/state": "^6.5.0",
@@ -48,8 +103,10 @@
 		"@tiptap/pm": "^2.11.0",
 		"@tiptap/react": "^2.11.0",
 		"@tiptap/starter-kit": "^2.11.0",
+		"@types/body-parser": "^1.19.5",
 		"@types/express": "^5.0.0",
 		"adm-zip": "^0.5.16",
+		"body-parser": "^1.20.3",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
 		"cmdk": "^1.0.0",

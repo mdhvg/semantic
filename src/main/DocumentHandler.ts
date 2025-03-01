@@ -4,15 +4,14 @@ import {
 	DocumentSchema,
 	ResultType,
 	SearchDocument,
-	ServerMessage,
 	ServerResponse
 } from '$shared/types'
 import { log } from 'console'
 import { db } from './Connector'
 import { logError, tokenizeText } from './utils'
-import { Index } from 'usearch'
 import { BrowserWindow } from 'electron'
 import { newRequest } from './ServerConnector'
+import { IndexHandler } from './IndexHandler'
 
 export async function fetchDocuments(): Promise<DocumentSchema[]> {
 	return new Promise((resolve, reject) => {
@@ -46,12 +45,9 @@ export function getDocument(id: number): Promise<DocumentContentSchema> {
 	})
 }
 
-export async function saveDocument(
-	documentData: DocumentSchema,
-	content: string,
-	index: Index,
-	requestQ: ServerMessage[]
-): Promise<void> {
+export async function saveDocument(documentData: DocumentSchema, content: string): Promise<void> {
+	const index = IndexHandler.getInstance().getIndex()
+	// TODO: Load the tokensPerChunk variable dynamically from the model parameters
 	const textTokens = await tokenizeText(content, 200, documentData.mime)
 	db.serialize(() => {
 		db.run('BEGIN TRANSACTION')
@@ -116,7 +112,7 @@ export async function saveDocument(
 						log(
 							`Data: ${JSON.stringify({ kind: 'DATA', id: row.content_id, data: textTokens[i] })}`
 						)
-						newRequest({ kind: 'DATA', id: row.content_id, data: textTokens[i] }, requestQ)
+						newRequest({ kind: 'DATA', id: row.content_id, data: textTokens[i] })
 					} else {
 						logError(err)
 					}
@@ -176,9 +172,9 @@ export async function createResult(key: number, distance: number): Promise<Resul
 
 export async function sendSearchResult(
 	data: ServerResponse,
-	index: Index,
 	mainWindow: BrowserWindow
 ): Promise<void> {
+	const index = IndexHandler.getInstance().getIndex()
 	const response: SearchDocument = { timestamp: Date.now(), documents: [] }
 	const result = index.search(new Float32Array(data.vector), 10)
 	for (let i = 0; i < result.keys.length; i++) {

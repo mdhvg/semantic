@@ -1,6 +1,7 @@
 import { ServerMessage, ServerResponse } from '$shared/types'
 import net from 'net'
 import { Delay, log, logError } from './utils'
+import { MessageQ } from './MessageQ'
 
 export class ServerConnector {
 	private static instance: ServerConnector
@@ -122,13 +123,14 @@ export class ServerConnector {
 	}
 }
 
-export async function pollRequests(requestQ: ServerMessage[]): Promise<void> {
+export async function pollRequests(): Promise<void> {
+	const queue = MessageQ.getInstance().getQueue()
 	const serverConnector = ServerConnector.getInstance()
-	while (requestQ.length > 0) {
+	while (queue.length > 0) {
 		if (!serverConnector.connected) {
 			await Delay(1000)
 		} else {
-			const request = requestQ.shift()
+			const request = queue.shift()
 			if (request) {
 				await serverConnector.sendMessage(request)
 			}
@@ -136,7 +138,8 @@ export async function pollRequests(requestQ: ServerMessage[]): Promise<void> {
 	}
 }
 
-export function newRequest(request: ServerMessage, requestQ: ServerMessage[]): void {
-	requestQ.push(request)
-	pollRequests(requestQ)
+export function newRequest(request: ServerMessage): void {
+	const queue = MessageQ.getInstance().getQueue()
+	queue.push(request)
+	pollRequests()
 }

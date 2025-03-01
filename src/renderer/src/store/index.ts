@@ -43,5 +43,3 @@ export const CommandAtom = atom<boolean>(false)
 export const SearchResultsAtom = atom<SearchDocument['documents']>([])
 
 export const ViewAtom = atom<View>(View.PREVIEW)
-
-export const FocusAtom = atom<number | null>(null)

@@ -7,8 +7,6 @@ import { ServerResponse, DocumentSchema } from '$shared/types'
 // import { setupPythonServer, startEmbeddingServer } from './Backend'
 import { log } from './utils'
 import { db } from './Connector'
-import { Index } from 'usearch'
-import type { ServerMessage } from '$shared/types'
 import { initiliazeBackend } from './Backend'
 import { startServer, stopServer } from './ExtensionServer'
 import http from 'http'
@@ -20,13 +18,12 @@ import {
 	saveDocument,
 	sendSearchResult
 } from './DocumentHandler'
-import { loadIndex, saveIndex } from './IndexHandler'
+import { IndexHandler } from './IndexHandler'
 
 let mainWindow: BrowserWindow
 let serverConnector: ServerConnector
-let index: Index
+let index: IndexHandler
 let extensionServer: http.Server
-const requestQ: ServerMessage[] = []
 
 function createWindow(): void {
 	// Create the browser window.
@@ -62,7 +59,7 @@ function createWindow(): void {
 
 	mainWindow.on('close', () => {
 		serverConnector.connected && serverConnector.sendMessage({ kind: 'COMMAND', command: 'close' })
-		saveIndex(index)
+		index.saveIndex()
 		stopServer(extensionServer)
 		mainWindow.destroy()
 	})
@@ -126,7 +123,7 @@ app.whenReady().then(async () => {
 	ipcMain.handle('fetch-documents', fetchDocuments)
 	ipcMain.handle('get-document', (_, id: number) => getDocument(id))
 	ipcMain.handle('save-document', (_, documentData: DocumentSchema, content: string) => {
-		saveDocument(documentData, content, index, requestQ)
+		saveDocument(documentData, content)
 	})
 	ipcMain.handle('delete-document', (_, id: number) => {
 		deleteDocument(id)
@@ -136,7 +133,7 @@ app.whenReady().then(async () => {
 	})
 	ipcMain.handle('search-document', (_, term: string) => {
 		log('Searching for:', term)
-		newRequest({ kind: 'QUERY', data: term }, requestQ)
+		newRequest({ kind: 'QUERY', data: term })
 	})
 
 	createWindow()
@@ -145,17 +142,14 @@ app.whenReady().then(async () => {
 		extensionServer = server
 	})
 
-	index = loadIndex()
+	index = IndexHandler.getInstance()
 
 	serverConnector = ServerConnector.getInstance()
 	serverConnector.onData(async (data: ServerResponse): Promise<void> => {
 		if (data.isQuery) {
-			await sendSearchResult(data, index, mainWindow)
+			await sendSearchResult(data, mainWindow)
 		} else {
-			if (index.contains(BigInt(data.id))) {
-				index.remove(BigInt(data.id))
-			}
-			index.add(BigInt(data.id), new Float32Array(data.vector))
+			index.updateIndex(data.id, data.vector)
 		}
 	})
 

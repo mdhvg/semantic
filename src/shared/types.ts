@@ -31,6 +31,12 @@ export type DocumentContentSchema = {
 	content: string
 }
 
+export type DroppedDocument = {
+	title: string
+	mime: string
+	content: string
+}
+
 export type DocumentMap = {
 	[key: string]: Partial<DocumentSchema[]>
 }

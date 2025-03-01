@@ -5,7 +5,6 @@ import {
 	ActiveDocumentIDAtom,
 	CommandAtom,
 	DocumentsAtom,
-	FocusAtom,
 	SearchResultsAtom,
 	ViewAtom
 } from '@/store'
@@ -24,7 +23,6 @@ export function SidebarSearch(): React.ReactElement {
 	const searchResults = useAtomValue<SearchDocument['documents']>(SearchResultsAtom)
 	const documents = useAtomValue<DocumentSchema[]>(DocumentsAtom)
 	const [, setActiveDocumentID] = useAtom<number | null>(ActiveDocumentIDAtom)
-	const [, setFocus] = useAtom<number | null>(FocusAtom)
 	const [, setView] = useAtom<View>(ViewAtom)
 
 	const debounce = (func: (query: string) => void, wait: number) => {
@@ -46,7 +44,6 @@ export function SidebarSearch(): React.ReactElement {
 		setOpen(false)
 		setView(View.PREVIEW)
 		setActiveDocumentID(document_id)
-		setFocus(content_id)
 	}
 
 	return (
