@@ -1,9 +1,25 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap');
 @import 'tailwindcss';
 
 @theme {
 	--color-background: #070708;
 	--color-nav: #0f0f0f;
 	--color-foreground: #d5d5d5;
+	--color-border: #2b2b2b;
+	--font-space: 'Space Grotesk', sans-serif;
+	--color-highlight: rgba(200, 255, 200, 1);
+}
+
+@utility smolglow-* {
+	text-shadow: 0 0 5px --value(--color- *);
+}
+
+@utility glow-* {
+	text-shadow: 0 0 10px --value(--color- *);
+}
+
+@utility bigglow-* {
+	text-shadow: 0 0 100px --value(--color- *);
 }
 
 * {
@@ -12,5 +28,5 @@
 
 #root {
 	width: 100vw;
-	height: 100vh;
+	height: 100%;
 }
