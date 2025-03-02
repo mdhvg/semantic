@@ -9,7 +9,10 @@ export const NavButton = ({
 }) => {
 	return (
 		<div className="nav-button px-5">
-			<button onClick={onClk} className="w-full h-full">
+			<button
+				onClick={onClk}
+				className="w-full h-full underline-offset-4 hover:underline hover:glow-green"
+			>
 				{children}
 			</button>
 		</div>
