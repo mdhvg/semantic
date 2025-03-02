@@ -43,7 +43,7 @@ function App() {
 
 	return (
 		<>
-			<nav className="nav fixed w-full max-h-fit">
+			<nav className="nav fixed w-full max-h-fit z-10">
 				<div
 					className={cn(
 						'nav-container',
@@ -64,7 +64,8 @@ function App() {
 						'md:grid-cols-2',
 						'gap-1',
 						'place-content-cente',
-						'backdrop-blur-sm'
+						'backdrop-blur-md',
+						'bg-fadebg'
 					)}
 				>
 					<a className="nav-logo-container h-14 min-w-fit" href="/">
